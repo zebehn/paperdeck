@@ -178,8 +178,11 @@ class SlideOrganizer:
         # Format authors for display
         authors = ", ".join(paper.authors) if paper.authors else "Unknown Author"
 
+        # Ensure title is not empty
+        title = paper.title if paper.title else "Research Paper Presentation"
+
         return Slide(
-            title=paper.title,
+            title=title,
             content_type=SlideContentType.TEXT,
             content=f"Authors: {authors}",
             sequence_number=0,
@@ -218,8 +221,8 @@ class SlideOrganizer:
         """
         slides = []
 
-        # Create section header slide
-        if section.title:
+        # Create section header slide (only if title is not empty)
+        if section.title and section.title.strip():
             header_slide = Slide(
                 title=section.title,
                 content_type=SlideContentType.TEXT,

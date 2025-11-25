@@ -1,0 +1,13 @@
+Create a clear and concise presentation from the following research paper. Focus on the main contributions, methodology, and key results.
+
+Paper content:
+{paper_content}
+
+Instructions:
+- Extract the most important points
+- Organize content into logical sections
+- Highlight key figures and tables
+- Summarize the main conclusions
+- Use technical language appropriate for an academic audience
+
+Generate presentation outline with slide titles and content descriptions.

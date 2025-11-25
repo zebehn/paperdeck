@@ -1,0 +1,85 @@
+<%# Base Beamer LaTeX template for presentations #%>
+\documentclass{beamer}
+\usetheme{<% theme %>}
+
+<%# Packages #%>
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{caption}
+
+<%# Presentation metadata #%>
+\title{<% title | escape_latex %>}
+\author{<% author | escape_latex %>}
+\date{<% date | escape_latex %>}
+
+\begin{document}
+
+<%# Title frame #%>
+\begin{frame}
+\titlepage
+\end{frame}
+
+<%# Content slides #%>
+<%% for slide in slides %%>
+<%% if slide.content_type.value != 'title' %%>
+
+\begin{frame}{<% slide.title | escape_latex %>}
+
+<%% if slide.content_type.value == 'section_header' %%>
+<%# Section header slide #%>
+<% slide.text_content %>
+
+<%% elif slide.content_type.value == 'text' %%>
+<%# Text content slide #%>
+<% slide.text_content | escape_latex %>
+
+<%% elif slide.content_type.value == 'figure' %%>
+<%# Figure slide #%>
+<%% for element in slide.elements %%>
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{<% element.output_filename %>}
+<%% if element.caption %%>
+\caption{<% element.caption | escape_latex %>}
+<%% endif %%>
+\end{figure}
+<%% endfor %%>
+
+<%% elif slide.content_type.value == 'table' %%>
+<%# Table slide #%>
+<%% for element in slide.elements %%>
+\begin{table}
+\centering
+\includegraphics[width=0.8\textwidth]{<% element.output_filename %>}
+<%% if element.caption %%>
+\caption{<% element.caption | escape_latex %>}
+<%% endif %%>
+\end{table}
+<%% endfor %%>
+
+<%% elif slide.content_type.value == 'equation' %%>
+<%# Equation slide #%>
+<%% for element in slide.elements %%>
+\begin{figure}
+\centering
+\includegraphics[width=0.6\textwidth]{<% element.output_filename %>}
+<%% if element.caption %%>
+\caption{<% element.caption | escape_latex %>}
+<%% endif %%>
+\end{figure}
+<%% endfor %%>
+
+<%% endif %%>
+
+<%% if slide.notes %%>
+\note{<% slide.notes | escape_latex %>}
+<%% endif %%>
+
+\end{frame}
+
+<%% endif %%>
+<%% endfor %%>
+
+\end{document}

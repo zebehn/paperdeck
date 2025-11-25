@@ -1,0 +1,30 @@
+{
+  "default": {
+    "name": "default",
+    "description": "Standard presentation template with balanced technical content",
+    "style": "technical",
+    "detail_level": "medium",
+    "is_builtin": true
+  },
+  "technical": {
+    "name": "technical",
+    "description": "Detailed technical presentation for expert audiences",
+    "style": "technical",
+    "detail_level": "high",
+    "is_builtin": true
+  },
+  "accessible": {
+    "name": "accessible",
+    "description": "Simplified presentation for general audiences",
+    "style": "accessible",
+    "detail_level": "low",
+    "is_builtin": true
+  },
+  "pedagogical": {
+    "name": "pedagogical",
+    "description": "Educational presentation structured for learning",
+    "style": "pedagogical",
+    "detail_level": "medium",
+    "is_builtin": true
+  }
+}

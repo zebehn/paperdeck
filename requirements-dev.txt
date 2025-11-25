@@ -1,0 +1,16 @@
+# Development dependencies
+-r requirements.txt
+
+# Testing
+pytest>=7.0
+pytest-mock>=3.0
+pytest-cov
+
+# Code quality
+ruff
+black
+mypy
+
+# Type stubs
+types-requests
+types-PyYAML

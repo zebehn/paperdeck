@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial release of PaperDeck
-- PDF element extraction using DocScalpel
+- PDF element extraction using Docling
 - AI-powered slide organization
 - Multi-provider AI support (OpenAI, Anthropic, Ollama, LM Studio)
 - LaTeX Beamer presentation generation
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mypy (type checking)
 
 ### Known Limitations
-- DocScalpel must be installed separately from GitHub
+- Docling can be installed via pip: `pip install docling`
 - LaTeX distribution required for PDF compilation
 - API keys required for cloud AI providers
 - Limited to PDF input format

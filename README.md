@@ -52,8 +52,8 @@ pip install -r requirements.txt
 # Install in development mode
 pip install -e .
 
-# Note: DocScalpel must be installed separately from GitHub
-pip install git+https://github.com/DS4SD/docling-core.git
+# Install Docling for PDF extraction
+pip install docling
 ```
 
 ### Basic Usage
@@ -379,7 +379,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [DocScalpel](https://github.com/DS4SD/docling-core) - PDF element extraction
+- [Docling](https://github.com/docling-project/docling) - PDF element extraction (IBM Research)
 - [Beamer](https://github.com/josephwright/beamer) - LaTeX presentation class
 - [Click](https://click.palletsprojects.com/) - CLI framework
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
@@ -427,10 +427,10 @@ export OPENAI_API_KEY="sk-..."
 paperdeck generate paper.pdf --api-key sk-...
 ```
 
-**Issue: "DocScalpel not installed"**
+**Issue: "Docling not installed"**
 ```bash
-# Install from GitHub
-pip install git+https://github.com/DS4SD/docling-core.git
+# Install from PyPI
+pip install docling
 ```
 
 **Issue: LaTeX compilation fails**

@@ -77,8 +77,8 @@ pip install -r requirements-dev.txt
 # Install package in editable mode
 pip install -e .
 
-# Install DocScalpel (required for PDF extraction)
-pip install git+https://github.com/DS4SD/docling-core.git
+# Install Docling (required for PDF extraction)
+pip install docling
 ```
 
 ### 4. Verify Setup

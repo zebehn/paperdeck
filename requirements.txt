@@ -10,5 +10,5 @@ ollama
 requests>=2.28
 pyyaml>=6.0
 
-# DocScalpel for PDF extraction - to be installed separately from GitHub
-# Installation: pip install git+https://github.com/zebehn/docscalpel.git
+# Docling for PDF extraction
+docling>=2.0

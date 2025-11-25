@@ -7,6 +7,7 @@ to extract figures, tables, and equations from PDF papers.
 from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
+import logging
 
 from ..core.models import (
     BoundingBox,
@@ -17,6 +18,10 @@ from ..core.models import (
     TableElement,
 )
 from ..core.exceptions import ExtractionError
+from .docscalpel_adapter import DocScalpelAdapter
+from .element_processor import ElementProcessor
+
+logger = logging.getLogger(__name__)
 
 
 class PaperExtractor:
@@ -42,6 +47,10 @@ class PaperExtractor:
 
         self.confidence_threshold = confidence_threshold
         self.output_directory = output_directory or Path("./extracted")
+
+        # Initialize DocScalpel adapter and element processor
+        self.adapter = DocScalpelAdapter()
+        self.processor = ElementProcessor(self.output_directory)
 
     def extract(
         self,
@@ -72,34 +81,33 @@ class PaperExtractor:
         if paper_path.suffix.lower() != ".pdf":
             raise ValueError(f"Paper file must be PDF: {paper_path}")
 
-        # Default to all element types
+        # Default to all element types (excluding EQUATION for now - not DocScalpel supported)
         if element_types is None:
-            element_types = [ElementType.FIGURE, ElementType.TABLE, ElementType.EQUATION]
+            element_types = [ElementType.FIGURE, ElementType.TABLE]
 
-        # Try to import docscalpel (it may not be installed)
+        # Use DocScalpel adapter to extract elements
+        logger.info(f"Extracting elements from {paper_path.name} using DocScalpel")
+
         try:
-            # Note: docscalpel might not be available in test environment
-            # For now, we'll provide a mock implementation that returns empty list
-            # Real implementation will use: from docscalpel import extract_elements
-            pass
-        except ImportError:
-            # DocScalpel not installed - return empty list for testing
+            extracted_elements = self.adapter.extract(paper_path, element_types)
+
+            # Filter by confidence threshold
+            filtered_elements = [
+                elem for elem in extracted_elements
+                if elem.confidence_score >= self.confidence_threshold
+            ]
+
+            logger.info(
+                f"Extracted {len(extracted_elements)} elements, "
+                f"{len(filtered_elements)} passed confidence threshold {self.confidence_threshold}"
+            )
+
+            return filtered_elements
+
+        except Exception as e:
+            logger.error(f"Error extracting elements from {paper_path}: {e}", exc_info=True)
+            # Graceful fallback - return empty list
             return []
-
-        # Mock implementation for testing
-        # Real implementation will call docscalpel here
-        extracted_elements: List[ExtractedElement] = []
-
-        # TODO: Integrate actual docscalpel extraction
-        # config = ExtractionConfig(
-        #     element_types=self._map_element_types(element_types),
-        #     confidence_threshold=self.confidence_threshold,
-        #     output_directory=str(self.output_directory),
-        # )
-        # result = extract_elements(str(paper_path), config)
-        # extracted_elements = self._convert_elements(result.elements)
-
-        return extracted_elements
 
     def _map_element_types(self, element_types: List[ElementType]) -> List:
         """Map our ElementType enum to docscalpel's ElementType.

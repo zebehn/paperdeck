@@ -12,3 +12,6 @@ pyyaml>=6.0
 
 # Docling for PDF extraction
 docling>=2.0
+
+# DocScalpel for figure and table extraction
+docscalpel @ git+https://github.com/zebehn/docscalpel.git

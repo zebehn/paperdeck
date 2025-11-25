@@ -7,9 +7,9 @@ Tests the orchestration of text extraction within the generation workflow.
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from src.paperdeck.services.generation_service import GenerationService
-from src.paperdeck.core.config import AppConfiguration, TextExtractionConfig
-from src.paperdeck.models.extraction_result import ExtractionStatus, TextExtractionResult
+from paperdeck.services.generation_service import GenerationService
+from paperdeck.core.config import AppConfiguration, TextExtractionConfig
+from paperdeck.models.extraction_result import ExtractionStatus, TextExtractionResult
 
 
 class TestGenerationServicePaperPreparation:

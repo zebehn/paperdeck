@@ -8,9 +8,9 @@ Tests define the expected behavior of text extraction.
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from src.paperdeck.extraction.text_extractor import PyMuPDFTextExtractor
-from src.paperdeck.core.config import TextExtractionConfig
-from src.paperdeck.models.extraction_result import ExtractionStatus, TextExtractionResult
+from paperdeck.extraction.text_extractor import PyMuPDFTextExtractor
+from paperdeck.core.config import TextExtractionConfig
+from paperdeck.models.extraction_result import ExtractionStatus, TextExtractionResult
 
 
 class TestPyMuPDFTextExtractorBasic:

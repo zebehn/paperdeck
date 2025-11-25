@@ -8,9 +8,9 @@ Tests verify the complete text extraction pipeline.
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from src.paperdeck.extraction.text_extractor import PyMuPDFTextExtractor
-from src.paperdeck.core.config import TextExtractionConfig
-from src.paperdeck.models.extraction_result import ExtractionStatus
+from paperdeck.extraction.text_extractor import PyMuPDFTextExtractor
+from paperdeck.core.config import TextExtractionConfig
+from paperdeck.models.extraction_result import ExtractionStatus
 
 
 class TestTextExtractionIntegration:

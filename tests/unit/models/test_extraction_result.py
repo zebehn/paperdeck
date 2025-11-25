@@ -5,7 +5,7 @@ Following TDD approach: These tests define expected behavior before implementati
 """
 
 import pytest
-from src.paperdeck.models.extraction_result import (
+from paperdeck.models.extraction_result import (
     ExtractionStatus,
     TextExtractionResult,
     validate_extraction_result,

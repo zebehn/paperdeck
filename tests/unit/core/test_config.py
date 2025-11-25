@@ -5,7 +5,7 @@ Following TDD approach: These tests define expected behavior before full impleme
 """
 
 import pytest
-from src.paperdeck.core.config import TextExtractionConfig
+from paperdeck.core.config import TextExtractionConfig
 
 
 class TestTextExtractionConfig:

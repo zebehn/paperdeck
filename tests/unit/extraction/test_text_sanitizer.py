@@ -6,8 +6,8 @@ Tests define the expected behavior of text sanitization.
 """
 
 import pytest
-from src.paperdeck.extraction.text_sanitizer import TextSanitizer
-from src.paperdeck.core.config import TextExtractionConfig
+from paperdeck.extraction.text_sanitizer import TextSanitizer
+from paperdeck.core.config import TextExtractionConfig
 
 
 class TestTextSanitizerHeaderFooterRemoval:

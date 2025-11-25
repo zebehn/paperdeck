@@ -7,7 +7,7 @@ from extracted PDF text.
 
 import re
 from typing import List
-from src.paperdeck.core.config import TextExtractionConfig
+from ..core.config import TextExtractionConfig
 
 
 class TextSanitizer:

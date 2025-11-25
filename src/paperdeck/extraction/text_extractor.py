@@ -14,12 +14,12 @@ try:
 except ImportError:
     fitz = None
 
-from src.paperdeck.core.config import TextExtractionConfig
-from src.paperdeck.models.extraction_result import (
+from ..core.config import TextExtractionConfig
+from ..models.extraction_result import (
     ExtractionStatus,
     TextExtractionResult,
 )
-from src.paperdeck.extraction.text_sanitizer import TextSanitizer
+from .text_sanitizer import TextSanitizer
 
 
 class PyMuPDFTextExtractor:

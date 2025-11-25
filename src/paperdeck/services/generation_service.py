@@ -8,10 +8,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from src.paperdeck.core.config import AppConfiguration, TextExtractionConfig
-from src.paperdeck.core.models import Paper
-from src.paperdeck.extraction.text_extractor import PyMuPDFTextExtractor
-from src.paperdeck.models.extraction_result import ExtractionStatus
+from ..core.config import AppConfiguration, TextExtractionConfig
+from ..core.models import Paper
+from ..extraction.text_extractor import PyMuPDFTextExtractor
+from ..models.extraction_result import ExtractionStatus
 
 logger = logging.getLogger(__name__)
 

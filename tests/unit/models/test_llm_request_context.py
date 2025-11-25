@@ -5,7 +5,7 @@ Following TDD approach: These tests define expected behavior before implementati
 """
 
 import pytest
-from src.paperdeck.models.llm_request_context import (
+from paperdeck.models.llm_request_context import (
     LLMRequestContext,
     validate_llm_request_context,
 )

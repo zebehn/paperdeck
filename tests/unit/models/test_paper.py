@@ -6,8 +6,8 @@ Following TDD approach: These tests define expected behavior for new text extrac
 
 import pytest
 from pathlib import Path
-from src.paperdeck.core.models import Paper
-from src.paperdeck.models.extraction_result import (
+from paperdeck.core.models import Paper
+from paperdeck.models.extraction_result import (
     ExtractionStatus,
     TextExtractionResult,
 )

@@ -2,6 +2,8 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/badge/github-zebehn/paperdeck-blue?logo=github)](https://github.com/zebehn/paperdeck)
+[![Tests](https://img.shields.io/badge/tests-95%20passing-success)](https://github.com/zebehn/paperdeck)
 
 **PaperDeck** is an intelligent LaTeX presentation generator that transforms research papers (PDFs) into polished Beamer presentations using AI.
 
@@ -37,7 +39,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/paperdeck.git
+git clone https://github.com/zebehn/paperdeck.git
 cd paperdeck
 
 # Create virtual environment
@@ -278,7 +280,7 @@ PaperDeck supports all standard Beamer themes:
 
 ```bash
 # Clone and install in development mode
-git clone https://github.com/yourusername/paperdeck.git
+git clone https://github.com/zebehn/paperdeck.git
 cd paperdeck
 python -m venv venv
 source venv/bin/activate
@@ -353,7 +355,7 @@ paperdeck/
 
 Contributions are welcome! Please follow these guidelines:
 
-1. Fork the repository
+1. Fork the repository at https://github.com/zebehn/paperdeck
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Add tests for new functionality
@@ -361,7 +363,7 @@ Contributions are welcome! Please follow these guidelines:
 6. Format code (`black src/ tests/`)
 7. Commit changes (`git commit -m 'Add amazing feature'`)
 8. Push to branch (`git push origin feature/amazing-feature`)
-9. Open a Pull Request
+9. Open a Pull Request at https://github.com/zebehn/paperdeck/pulls
 
 ### Development Guidelines
 
@@ -382,10 +384,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Click](https://click.palletsprojects.com/) - CLI framework
 - [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 
-## 📧 Contact
+## 📧 Contact & Support
 
-- GitHub Issues: [https://github.com/yourusername/paperdeck/issues](https://github.com/yourusername/paperdeck/issues)
-- Email: your.email@example.com
+- **GitHub Repository:** https://github.com/zebehn/paperdeck
+- **Issues & Bug Reports:** https://github.com/zebehn/paperdeck/issues
+- **Pull Requests:** https://github.com/zebehn/paperdeck/pulls
+- **Documentation:** https://github.com/zebehn/paperdeck/tree/main/docs
 
 ## 🔮 Roadmap
 

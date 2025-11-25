@@ -143,11 +143,11 @@ Do not open public issues for security vulnerabilities.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/paperdeck/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/paperdeck/discussions)
-- **Email**: support@paperdeck.example.com
+- **Issues**: [GitHub Issues](https://github.com/zebehn/paperdeck/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/zebehn/paperdeck/discussions)
+- **Documentation**: [GitHub Repository](https://github.com/zebehn/paperdeck)
 
 ---
 
-[Unreleased]: https://github.com/yourusername/paperdeck/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/paperdeck/releases/tag/v0.1.0
+[Unreleased]: https://github.com/zebehn/paperdeck/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/zebehn/paperdeck/releases/tag/v0.1.0

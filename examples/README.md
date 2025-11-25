@@ -292,8 +292,8 @@ After running examples:
 
 - [Main README](../README.md) - Full documentation
 - [Contributing Guide](../CONTRIBUTING.md) - Development guidelines
-- [Issue Tracker](https://github.com/yourusername/paperdeck/issues) - Report problems
-- [Discussions](https://github.com/yourusername/paperdeck/discussions) - Ask questions
+- [Issue Tracker](https://github.com/zebehn/paperdeck/issues) - Report problems
+- [Discussions](https://github.com/zebehn/paperdeck/discussions) - Ask questions
 
 ---
 

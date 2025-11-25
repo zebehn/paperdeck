@@ -55,10 +55,10 @@ If you're new to open source:
 ### 1. Fork and Clone
 
 ```bash
-# Fork the repository on GitHub, then:
+# Fork the repository on GitHub (https://github.com/zebehn/paperdeck), then:
 git clone https://github.com/YOUR-USERNAME/paperdeck.git
 cd paperdeck
-git remote add upstream https://github.com/original/paperdeck.git
+git remote add upstream https://github.com/zebehn/paperdeck.git
 ```
 
 ### 2. Create Virtual Environment
@@ -498,10 +498,10 @@ install(show_locals=True)
 
 ## Questions?
 
-- Check existing [documentation](README.md)
-- Search [existing issues](https://github.com/yourusername/paperdeck/issues)
-- Ask in [discussions](https://github.com/yourusername/paperdeck/discussions)
-- Email: your.email@example.com
+- Check existing [documentation](https://github.com/zebehn/paperdeck/tree/main/docs)
+- Search [existing issues](https://github.com/zebehn/paperdeck/issues)
+- Open a [new issue](https://github.com/zebehn/paperdeck/issues/new) for questions or discussions
+- View the [main repository](https://github.com/zebehn/paperdeck)
 
 ## Recognition
 

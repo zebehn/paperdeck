@@ -18,7 +18,7 @@ python --version
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/paperdeck.git
+git clone https://github.com/zebehn/paperdeck.git
 cd paperdeck
 
 # Create virtual environment
@@ -256,9 +256,9 @@ paperdeck generate paper.pdf --no-compile -v
 ## 🆘 Getting Help
 
 - **Quick questions**: Check [README.md](README.md)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/paperdeck/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/paperdeck/discussions)
-- **Email**: support@paperdeck.example.com
+- **Issues**: [GitHub Issues](https://github.com/zebehn/paperdeck/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/zebehn/paperdeck/discussions)
+- **Documentation**: [GitHub Repository](https://github.com/zebehn/paperdeck)
 
 ## 📦 What's Included
 

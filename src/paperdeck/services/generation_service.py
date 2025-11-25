@@ -11,6 +11,7 @@ from typing import Optional
 from ..core.config import AppConfiguration, TextExtractionConfig
 from ..core.models import Paper
 from ..extraction.text_extractor import PyMuPDFTextExtractor
+from ..extraction.text_parser import AcademicTextParser
 from ..models.extraction_result import ExtractionStatus
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class GenerationService:
         """
         self.config = config
         self.text_extractor = PyMuPDFTextExtractor()
+        self.text_parser = AcademicTextParser()
 
     def prepare_paper(
         self,
@@ -100,6 +102,25 @@ class GenerationService:
                     f"{extraction_result.clean_text_length} characters, "
                     f"{extraction_result.extraction_time_seconds:.2f}s"
                 )
+
+                # Parse text into structured sections
+                logger.info(f"Parsing text into sections for {pdf_path.name}...")
+                title, authors, sections = self.text_parser.parse(paper.text_content)
+
+                # Populate paper metadata
+                if title:
+                    paper.title = title
+                    logger.info(f"  Extracted title: {title[:80]}...")
+                if authors:
+                    paper.authors = authors
+                    logger.info(f"  Extracted {len(authors)} author(s)")
+                if sections:
+                    paper.sections = sections
+                    logger.info(f"  Parsed {len(sections)} section(s)")
+                    for section in sections:
+                        logger.info(f"    - {section.title}")
+                else:
+                    logger.warning(f"  No sections found in text")
             else:
                 # Extraction failed - log warning and fall back
                 self._log_extraction_failure(pdf_path, extraction_result)

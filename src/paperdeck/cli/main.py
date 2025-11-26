@@ -6,13 +6,15 @@ research papers.
 
 import sys
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
 import click
 
-from ..core.config import AppConfiguration, AIServiceConfiguration
+from ..core.config import AppConfiguration, AIServiceConfiguration, ExtractionConfiguration
 from ..core.exceptions import PaperDeckError
+from ..core.models import ElementType
 
 
 @click.group()
@@ -74,6 +76,27 @@ def cli(ctx):
     is_flag=True,
     help="Enable verbose output",
 )
+@click.option(
+    "--extract-figures/--no-extract-figures",
+    default=True,
+    help="Extract figures from PDF (default: enabled)",
+)
+@click.option(
+    "--extract-tables/--no-extract-tables",
+    default=True,
+    help="Extract tables from PDF (default: enabled)",
+)
+@click.option(
+    "--extraction-confidence",
+    type=float,
+    default=0.75,
+    help="Minimum confidence threshold for extracted elements (0.0-1.0, default: 0.75)",
+)
+@click.option(
+    "--elements-output-dir",
+    type=click.Path(path_type=Path),
+    help="Directory to save extracted elements (default: <output>/extracted)",
+)
 @click.pass_context
 def generate(
     ctx,
@@ -86,6 +109,10 @@ def generate(
     api_key: Optional[str],
     no_compile: bool,
     verbose: bool,
+    extract_figures: bool,
+    extract_tables: bool,
+    extraction_confidence: float,
+    elements_output_dir: Optional[Path],
 ):
     """Generate a presentation from a PDF research paper.
 
@@ -98,26 +125,63 @@ def generate(
 
     # Configure AI service
     ai_config_kwargs = {"default_provider": provider}
+
+    # Check for API key from CLI option or environment variable
     if api_key:
+        # CLI option takes precedence
         if provider == "openai":
             ai_config_kwargs["openai_api_key"] = api_key
         elif provider == "anthropic":
             ai_config_kwargs["anthropic_api_key"] = api_key
+    else:
+        # Check environment variables
+        if provider == "openai":
+            openai_key = os.environ.get("OPENAI_API_KEY")
+            if openai_key:
+                ai_config_kwargs["openai_api_key"] = openai_key
+        elif provider == "anthropic":
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+            if anthropic_key:
+                ai_config_kwargs["anthropic_api_key"] = anthropic_key
 
     try:
         ai_config = AIServiceConfiguration(**ai_config_kwargs)
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)
         click.echo(
-            f"\nHint: Set API key via --api-key option or environment variable",
+            f"\nHint: Set API key via --api-key option or environment variable (OPENAI_API_KEY or ANTHROPIC_API_KEY)",
             err=True,
         )
+        sys.exit(1)
+
+    # Configure element extraction
+    extraction_element_types = []
+    if extract_figures:
+        extraction_element_types.append(ElementType.FIGURE)
+    if extract_tables:
+        extraction_element_types.append(ElementType.TABLE)
+
+    # If no types selected, fall back to both (avoid empty list)
+    if not extraction_element_types:
+        extraction_element_types = [ElementType.FIGURE, ElementType.TABLE]
+
+    try:
+        extraction_config = ExtractionConfiguration(
+            confidence_threshold=extraction_confidence,
+            element_types=extraction_element_types,
+            output_directory=elements_output_dir or (output_dir / "extracted"),
+            extract_figures=extract_figures,
+            extract_tables=extract_tables,
+        )
+    except ValueError as e:
+        click.echo(f"Error: Invalid extraction configuration: {e}", err=True)
         sys.exit(1)
 
     config = AppConfiguration(
         ai_services=ai_config,
         output_directory=output_dir,
         log_level="DEBUG" if verbose else "INFO",
+        extraction_config=extraction_config,
     )
 
     # Setup logging

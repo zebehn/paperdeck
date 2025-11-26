@@ -66,6 +66,11 @@ class SlideOrganizer:
             section_slides = self._create_section_slides(section)
             slides.extend(section_slides)
 
+        # Create slides for extracted elements (figures, tables, equations)
+        if paper.extracted_elements:
+            element_slides = self._create_extracted_element_slides(paper.extracted_elements)
+            slides.extend(element_slides)
+
         # Create presentation
         presentation = Presentation(
             paper=paper,
@@ -263,6 +268,49 @@ class SlideOrganizer:
                 sequence_number=len(slides),
             )
             slides.append(text_slide)
+
+        return slides
+
+    def _create_extracted_element_slides(
+        self, extracted_elements: List[ExtractedElement]
+    ) -> List[Slide]:
+        """Create slides for extracted elements (figures, tables, equations).
+
+        Groups elements by type and creates appropriate slides for each group.
+
+        Args:
+            extracted_elements: List of all extracted elements from the paper
+
+        Returns:
+            List[Slide]: Slides containing extracted elements
+        """
+        slides = []
+
+        # Group elements by type
+        figures = [e for e in extracted_elements if e.element_type == ElementType.FIGURE]
+        tables = [e for e in extracted_elements if e.element_type == ElementType.TABLE]
+        equations = [e for e in extracted_elements if e.element_type == ElementType.EQUATION]
+
+        # Create figure slides
+        if figures:
+            figure_slides = self._create_element_slides(
+                figures, SlideContentType.FIGURE, "Figures"
+            )
+            slides.extend(figure_slides)
+
+        # Create table slides
+        if tables:
+            table_slides = self._create_element_slides(
+                tables, SlideContentType.TABLE, "Tables"
+            )
+            slides.extend(table_slides)
+
+        # Create equation slides
+        if equations:
+            equation_slides = self._create_element_slides(
+                equations, SlideContentType.EQUATION, "Equations"
+            )
+            slides.extend(equation_slides)
 
         return slides
 

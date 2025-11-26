@@ -222,6 +222,111 @@ class LaTeXGenerator:
             "paper": presentation.paper,
         }
 
+    @staticmethod
+    def generate_figure_latex(
+        figure_element,
+        output_dir: Optional[Path] = None,
+        width: str = "0.8\\textwidth"
+    ) -> str:
+        """Generate LaTeX code for a figure element.
+
+        Args:
+            figure_element: FigureElement object to render
+            output_dir: Output directory containing the figure file (for relative path calculation)
+            width: LaTeX width specification (default: 0.8\\textwidth)
+
+        Returns:
+            str: LaTeX code for including the figure with caption
+        """
+        if not figure_element.output_filename:
+            # No image file - return placeholder
+            return f"% Figure {figure_element.sequence_number} (no image available)\n"
+
+        # Format the graphics path
+        graphics_path = LaTeXGenerator._format_graphics_path(
+            figure_element.output_filename, output_dir
+        )
+
+        # Build LaTeX code
+        latex = "\\begin{figure}\n"
+        latex += "  \\centering\n"
+        latex += f"  \\includegraphics[width={width}]{{{graphics_path}}}\n"
+
+        # Add caption if available
+        if figure_element.caption:
+            escaped_caption = escape_latex(figure_element.caption)
+            latex += f"  \\caption{{{escaped_caption}}}\n"
+
+        latex += "\\end{figure}\n"
+        return latex
+
+    @staticmethod
+    def generate_table_latex(
+        table_element,
+        output_dir: Optional[Path] = None,
+        width: str = "0.9\\textwidth"
+    ) -> str:
+        """Generate LaTeX code for a table element.
+
+        Args:
+            table_element: TableElement object to render
+            output_dir: Output directory containing the table file (for relative path calculation)
+            width: LaTeX width specification (default: 0.9\\textwidth for tables)
+
+        Returns:
+            str: LaTeX code for including the table with caption
+        """
+        if not table_element.output_filename:
+            # No image file - return placeholder
+            return f"% Table {table_element.sequence_number} (no image available)\n"
+
+        # Format the graphics path
+        graphics_path = LaTeXGenerator._format_graphics_path(
+            table_element.output_filename, output_dir
+        )
+
+        # Build LaTeX code
+        latex = "\\begin{table}\n"
+        latex += "  \\centering\n"
+        latex += f"  \\includegraphics[width={width}]{{{graphics_path}}}\n"
+
+        # Add caption if available
+        if table_element.caption:
+            escaped_caption = escape_latex(table_element.caption)
+            latex += f"  \\caption{{{escaped_caption}}}\n"
+
+        latex += "\\end{table}\n"
+        return latex
+
+    @staticmethod
+    def _format_graphics_path(
+        figure_path: Path,
+        output_dir: Optional[Path] = None
+    ) -> str:
+        """Format graphics path for LaTeX \\includegraphics command.
+
+        Converts absolute paths to relative paths from output directory.
+
+        Args:
+            figure_path: Absolute path to the figure file
+            output_dir: Output directory (for calculating relative path)
+
+        Returns:
+            str: Formatted path suitable for \\includegraphics{}
+        """
+        if output_dir and figure_path.is_absolute():
+            try:
+                # Make path relative to output directory
+                relative_path = figure_path.relative_to(output_dir)
+                # Use forward slashes for LaTeX compatibility
+                return str(relative_path).replace("\\", "/")
+            except ValueError:
+                # figure_path is not relative to output_dir, use absolute path
+                pass
+
+        # Use forward slashes for LaTeX compatibility
+        return str(figure_path).replace("\\", "/")
+
 
 # Keep old name for backwards compatibility
 LatexGenerator = LaTeXGenerator

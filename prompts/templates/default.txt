@@ -1,13 +1,65 @@
-Create a clear and concise presentation from the following research paper. Focus on the main contributions, methodology, and key results.
+You are an expert in creating LaTeX presentations using the Beamer package. Your task is to generate a complete LaTeX document for a slide-based presentation that summarizes a given research paper. The input will include:
 
-Paper content:
+- A PDF file of the research paper (named, e.g., "paper.pdf").
+- A set of image files extracted from the paper, where each figure or table is saved as a PNG file named according to its reference in the paper (e.g., "figure_1.png" for Fig. 1, "table_2.png" for Table 2).
+
+To generate the presentation:
+
+1. **Extract Key Information from the PDF:**
+   - Read the PDF to identify the title, authors (list main authors first, then et al. if many), institutions/affiliations, publication venue (conference or journal name), year, and any DOI or other citation details.
+   - Identify the main sections of the paper, such as Abstract, Introduction, Related Work, Methodology, Experiments, Results, Discussion, Conclusion, etc.
+   - Map the paper's content to the following structured slide categories, adapting the overall structure rigorously to the paper's characteristics (e.g., if the paper has no explicit "limitations" section, infer or combine from Discussion/Conclusion; if it emphasizes certain aspects like novel algorithms, dedicate more slides to them):
+     - Research Area/Background
+     - Goal of the Research
+     - State-of-the-Art (SOTA) Technologies and Their Limitations
+     - Research Motivation
+     - Problem Definition
+     - Proposed Method and Technologies
+     - Experimental Design
+     - Datasets Used
+     - Experimental Results and Analysis
+     - Conclusion
+     - Limitations and Future Work
+   - For each category, extract concise bullet points, key sentences, or summaries from the relevant paper sections. Keep summaries factual and objective, avoiding additions or interpretations not in the paper.
+   - Locate references to figures and tables in the paper and note their descriptions/captions for inclusion.
+
+2. **Handle Figures and Tables:**
+   - Include all provided image files in the appropriate slides. For example:
+     - Place "figure_1.png" on the slide discussing the content related to Fig. 1, with a caption matching the paper's description.
+     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{figure_1.png}).
+     - If a figure or table spans multiple concepts, reference it in multiple slides if needed.
+   - If no image file is provided for a mentioned figure/table, note it as a placeholder (e.g., "Figure X (not extracted)").
+
+3. **LaTeX Structure Guidelines:**
+   - Use the Beamer document class: \documentclass\{beamer\}.
+   - Include necessary packages: \usepackage\{graphicx\} for images, \usepackage\{amsmath\} for math, \usepackage\{biblatex\} if needed for citations (but keep bibliography simple).
+   - Theme: Use a clean theme like \usetheme\{Madrid\} or similar for readability.
+   - Title Slide: Include the paper's title, authors, institutions, venue, year.
+   - Citation Slide: Immediately after the title slide, create a dedicated slide with full citation details (e.g., in APA or BibTeX format if applicable).
+   - Content Slides:
+     - Use \frame\{\} or \begin\{frame\} for each slide.
+     - Structure with \frametitle\{\} for slide titles.
+     - Use itemize or enumerate for bullet points.
+     - Limit content per slide: 3-6 bullets max, with short phrases.
+     - For methods or results, use columns or blocks if complex (e.g., \begin\{columns\} for side-by-side text and image).
+   - Escape Special Characters:
+     - Replace arrows like "→" with \rightarrow in math mode ($ \rightarrow $).
+     - Escape inequalities like "<" as $<$ in math mode ($<$).
+     - Use \$ for inline math, \begin\{equation\} for display math.
+     - Handle other LaTeX reserved characters (e.g., \& for &, \% for %, etc.).
+   - End with a "Thank You" or Q&A slide.
+
+4. **Output Format:**
+   - Generate the full LaTeX code as a single .tex file content.
+   - Ensure the code is compilable (assume images are in the same directory).
+   - If the paper is long, prioritize key contributions; aim for 10-20 slides total.
+
+Now, using the provided research paper content and extracted image files below, generate the LaTeX presentation code.
+
+# Research Paper Information
+
 {paper_content}
 
-Instructions:
-- Extract the most important points
-- Organize content into logical sections
-- Highlight key figures and tables
-- Summarize the main conclusions
-- Use technical language appropriate for an academic audience
+# Task
 
-Generate presentation outline with slide titles and content descriptions.
+Generate the complete LaTeX beamer presentation following all the guidelines above.

@@ -275,8 +275,7 @@ class Slide:
         if element.element_type == ElementType.FIGURE:
             return LaTeXGenerator.generate_figure_latex(element)
         elif element.element_type == ElementType.TABLE:
-            # TODO: Implement table generation (Phase 6)
-            return f"% Table {element.sequence_number} (not yet implemented)\n"
+            return LaTeXGenerator.generate_table_latex(element)
         elif element.element_type == ElementType.EQUATION:
             # TODO: Implement equation generation (future phase)
             return f"% Equation {element.sequence_number} (not yet implemented)\n"

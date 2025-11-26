@@ -261,6 +261,44 @@ class LaTeXGenerator:
         return latex
 
     @staticmethod
+    def generate_table_latex(
+        table_element,
+        output_dir: Optional[Path] = None,
+        width: str = "0.9\\textwidth"
+    ) -> str:
+        """Generate LaTeX code for a table element.
+
+        Args:
+            table_element: TableElement object to render
+            output_dir: Output directory containing the table file (for relative path calculation)
+            width: LaTeX width specification (default: 0.9\\textwidth for tables)
+
+        Returns:
+            str: LaTeX code for including the table with caption
+        """
+        if not table_element.output_filename:
+            # No image file - return placeholder
+            return f"% Table {table_element.sequence_number} (no image available)\n"
+
+        # Format the graphics path
+        graphics_path = LaTeXGenerator._format_graphics_path(
+            table_element.output_filename, output_dir
+        )
+
+        # Build LaTeX code
+        latex = "\\begin{table}\n"
+        latex += "  \\centering\n"
+        latex += f"  \\includegraphics[width={width}]{{{graphics_path}}}\n"
+
+        # Add caption if available
+        if table_element.caption:
+            escaped_caption = escape_latex(table_element.caption)
+            latex += f"  \\caption{{{escaped_caption}}}\n"
+
+        latex += "\\end{table}\n"
+        return latex
+
+    @staticmethod
     def _format_graphics_path(
         figure_path: Path,
         output_dir: Optional[Path] = None

@@ -86,8 +86,8 @@ class DocScalpelAdapter:
         The extraction process:
         1. Check DocScalpel availability (graceful fallback if not installed)
         2. Apply configuration flags (extract_figures, extract_tables)
-        3. Call specialized detection methods (_detect_figures, _detect_tables)
-        4. Return combined list of extracted elements
+        3. Call DocScalpel extract_elements() function
+        4. Convert DocScalpel Elements to PaperDeck ExtractedElements
 
         Args:
             pdf_path: Path to the PDF file to process
@@ -133,102 +133,115 @@ class DocScalpelAdapter:
             logger.info("No element types enabled for extraction")
             return []
 
-        extracted = []
+        # Use DocScalpel to extract all elements at once
+        try:
+            # Create DocScalpel configuration
+            docscalpel_config = self._create_docscalpel_config(element_types)
 
-        # Extract figures
-        if ElementType.FIGURE in element_types:
-            figures = self._detect_figures(pdf_path)
-            extracted.extend(figures)
-            logger.info(f"Extracted {len(figures)} figure(s) from {pdf_path.name}")
+            # Extract elements using DocScalpel
+            logger.info(f"Extracting elements from {pdf_path.name} using DocScalpel...")
+            result = self.docscalpel.extract_elements(str(pdf_path), docscalpel_config)
 
-        # Extract tables
-        if ElementType.TABLE in element_types:
-            tables = self._detect_tables(pdf_path)
-            extracted.extend(tables)
-            logger.info(f"Extracted {len(tables)} table(s) from {pdf_path.name}")
+            if not result.success:
+                logger.warning(f"DocScalpel extraction completed with errors: {result.errors}")
 
-        return extracted
+            if result.warnings:
+                for warning in result.warnings:
+                    logger.warning(f"DocScalpel warning: {warning}")
 
-    def _detect_figures(self, pdf_path: Path) -> List[ExtractedElement]:
-        """
-        Detect and extract figures from PDF using DocScalpel.
+            # Convert DocScalpel elements to PaperDeck elements
+            extracted = self._convert_elements(result.elements)
+
+            logger.info(
+                f"Successfully extracted {len(extracted)} element(s) from {pdf_path.name} "
+                f"({result.figure_count} figures, {result.table_count} tables)"
+            )
+
+            return extracted
+
+        except Exception as e:
+            logger.error(f"Error during DocScalpel extraction: {e}", exc_info=True)
+            return []
+
+    def _create_docscalpel_config(self, element_types: List[ElementType]):
+        """Create DocScalpel ExtractionConfig from PaperDeck element types.
 
         Args:
-            pdf_path: Path to PDF file
+            element_types: List of PaperDeck ElementType enums to extract
 
         Returns:
-            List of FigureElement objects
+            DocScalpel ExtractionConfig object
         """
-        from ..core.models import FigureElement
+        # Map PaperDeck ElementType to DocScalpel ElementType
+        docscalpel_types = []
+        for elem_type in element_types:
+            if elem_type == ElementType.FIGURE:
+                docscalpel_types.append(self.docscalpel.ElementType.FIGURE)
+            elif elem_type == ElementType.TABLE:
+                docscalpel_types.append(self.docscalpel.ElementType.TABLE)
+            elif elem_type == ElementType.EQUATION:
+                docscalpel_types.append(self.docscalpel.ElementType.EQUATION)
+
+        # Create configuration with our settings
+        config = self.docscalpel.ExtractionConfig(
+            element_types=docscalpel_types,
+            output_directory=str(self.config.output_directory) if self.config else ".",
+            confidence_threshold=self.config.confidence_threshold if self.config else 0.5,
+            naming_pattern="{type}_{counter}.png",  # Match our naming convention
+            overwrite_existing=True,
+        )
+
+        return config
+
+    def _convert_elements(self, docscalpel_elements: List) -> List[ExtractedElement]:
+        """Convert DocScalpel Element objects to PaperDeck ExtractedElement objects.
+
+        Args:
+            docscalpel_elements: List of DocScalpel Element objects
+
+        Returns:
+            List of PaperDeck ExtractedElement objects (FigureElement, TableElement, etc.)
+        """
+        from ..core.models import FigureElement, TableElement, EquationElement, BoundingBox
         from uuid import uuid4
 
-        figures = []
+        converted = []
 
-        try:
-            # TODO: Replace with actual DocScalpel API calls
-            # For now, return empty list (DocScalpel integration pending)
-            # Expected flow:
-            # 1. doc = self.docscalpel.Document(str(pdf_path))
-            # 2. detected_figures = doc.detect_figures()
-            # 3. for each figure: extract metadata and create FigureElement
+        for ds_elem in docscalpel_elements:
+            # Map DocScalpel ElementType to PaperDeck ElementType
+            if ds_elem.element_type == self.docscalpel.ElementType.FIGURE:
+                paperdeck_type = ElementType.FIGURE
+                element_class = FigureElement
+            elif ds_elem.element_type == self.docscalpel.ElementType.TABLE:
+                paperdeck_type = ElementType.TABLE
+                element_class = TableElement
+            elif ds_elem.element_type == self.docscalpel.ElementType.EQUATION:
+                paperdeck_type = ElementType.EQUATION
+                element_class = EquationElement
+            else:
+                logger.warning(f"Unknown element type: {ds_elem.element_type}")
+                continue
 
-            logger.debug(f"Figure detection called for {pdf_path.name}")
+            # Convert DocScalpel BoundingBox to PaperDeck BoundingBox
+            bbox = BoundingBox(
+                x=ds_elem.bounding_box.x,
+                y=ds_elem.bounding_box.y,
+                width=ds_elem.bounding_box.width,
+                height=ds_elem.bounding_box.height,
+            )
 
-        except Exception as e:
-            logger.error(f"Error detecting figures: {e}", exc_info=True)
+            # Create PaperDeck element
+            element = element_class(
+                uuid=uuid4(),
+                element_type=paperdeck_type,
+                page_number=ds_elem.page_number,
+                bounding_box=bbox,
+                confidence_score=ds_elem.confidence_score,
+                sequence_number=ds_elem.sequence_number,
+                caption=None,  # DocScalpel doesn't extract captions yet
+                output_filename=Path(ds_elem.output_filename),  # Path to saved image
+            )
 
-        return figures
+            converted.append(element)
 
-    def _extract_figure_metadata(self, doc_figure) -> dict:
-        """
-        Extract metadata from a DocScalpel figure object.
-
-        Args:
-            doc_figure: DocScalpel figure object
-
-        Returns:
-            Dictionary with figure metadata (caption, bbox, confidence)
-        """
-        metadata = {
-            "caption": None,
-            "page_number": 1,
-            "bounding_box": {"x": 0, "y": 0, "width": 100, "height": 100},
-            "confidence_score": 0.0,
-        }
-
-        try:
-            # TODO: Replace with actual DocScalpel API
-            # metadata["caption"] = doc_figure.caption
-            # metadata["page_number"] = doc_figure.page
-            # metadata["bounding_box"] = doc_figure.bbox
-            # metadata["confidence_score"] = doc_figure.confidence
-            pass
-
-        except Exception as e:
-            logger.warning(f"Error extracting figure metadata: {e}")
-
-        return metadata
-
-    def _detect_tables(self, pdf_path: Path) -> List[ExtractedElement]:
-        """
-        Detect and extract tables from PDF using DocScalpel.
-
-        Args:
-            pdf_path: Path to PDF file
-
-        Returns:
-            List of TableElement objects
-        """
-        from ..core.models import TableElement
-        from uuid import uuid4
-
-        tables = []
-
-        try:
-            # TODO: Replace with actual DocScalpel API calls
-            logger.debug(f"Table detection called for {pdf_path.name}")
-
-        except Exception as e:
-            logger.error(f"Error detecting tables: {e}", exc_info=True)
-
-        return tables
+        return converted

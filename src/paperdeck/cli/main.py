@@ -6,6 +6,7 @@ research papers.
 
 import sys
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -124,18 +125,31 @@ def generate(
 
     # Configure AI service
     ai_config_kwargs = {"default_provider": provider}
+
+    # Check for API key from CLI option or environment variable
     if api_key:
+        # CLI option takes precedence
         if provider == "openai":
             ai_config_kwargs["openai_api_key"] = api_key
         elif provider == "anthropic":
             ai_config_kwargs["anthropic_api_key"] = api_key
+    else:
+        # Check environment variables
+        if provider == "openai":
+            openai_key = os.environ.get("OPENAI_API_KEY")
+            if openai_key:
+                ai_config_kwargs["openai_api_key"] = openai_key
+        elif provider == "anthropic":
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+            if anthropic_key:
+                ai_config_kwargs["anthropic_api_key"] = anthropic_key
 
     try:
         ai_config = AIServiceConfiguration(**ai_config_kwargs)
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)
         click.echo(
-            f"\nHint: Set API key via --api-key option or environment variable",
+            f"\nHint: Set API key via --api-key option or environment variable (OPENAI_API_KEY or ANTHROPIC_API_KEY)",
             err=True,
         )
         sys.exit(1)

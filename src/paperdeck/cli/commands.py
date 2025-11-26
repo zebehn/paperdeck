@@ -226,7 +226,7 @@ def generate_with_ai(
     Args:
         paper: Paper model with text content and extracted elements
         config: Application configuration
-        prompt_name: Name of prompt template
+        prompt_name: Name of prompt template or path to custom prompt file
         model: Model to use
         pdf_path: Optional path to PDF file to send to AI service
 
@@ -239,10 +239,36 @@ def generate_with_ai(
     import logging
     logger = logging.getLogger(__name__)
 
-    # Load prompt template
-    prompt_library_path = Path(__file__).parent.parent.parent.parent / "prompts" / "templates"
-    library = PromptLibrary(library_path=prompt_library_path)
-    template = library.get_template(prompt_name)
+    # Load prompt template - check if it's a file path or template name
+    prompt_path = Path(prompt_name)
+    if prompt_path.exists() and prompt_path.is_file():
+        # Load custom prompt file
+        logger.info(f"Loading custom prompt from file: {prompt_path}")
+        try:
+            from ..prompts.manager import PromptTemplate
+
+            content = prompt_path.read_text()
+            template = PromptTemplate(
+                name=prompt_path.stem,
+                description=f"Custom prompt from {prompt_path.name}",
+                content=content,
+                style="custom",
+                detail_level="medium",
+                is_builtin=False,
+            )
+            logger.info(f"Successfully loaded custom prompt: {template.name}")
+        except Exception as e:
+            raise GenerationError(f"Failed to load custom prompt file '{prompt_path}': {e}")
+    else:
+        # Load template from library
+        logger.info(f"Loading prompt template from library: {prompt_name}")
+        prompt_library_path = Path(__file__).parent.parent.parent.parent / "prompts" / "templates"
+        library = PromptLibrary(library_path=prompt_library_path)
+        try:
+            template = library.get_template(prompt_name)
+            logger.info(f"Successfully loaded template: {template.name}")
+        except KeyError:
+            raise GenerationError(f"Prompt template '{prompt_name}' not found in library")
 
     # Prepare context - if PDF file is provided, use minimal text; otherwise use full extracted content
     if pdf_path:

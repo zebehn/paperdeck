@@ -49,7 +49,7 @@ def cli(ctx):
     "--prompt",
     "prompt_name",
     default="default",
-    help="Prompt template to use (default: default)",
+    help="Prompt template name or path to custom prompt file (default: default)",
 )
 @click.option(
     "--provider",

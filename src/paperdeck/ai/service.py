@@ -6,7 +6,8 @@ along with the request and response data structures.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
 
 @dataclass
@@ -18,6 +19,7 @@ class AIRequest:
     max_tokens: int = 4096
     temperature: float = 0.7
     system_instructions: Optional[str] = None
+    pdf_file_path: Optional[Union[str, Path]] = None  # Path to PDF file to upload
 
     def __post_init__(self):
         """Validate AI request parameters."""
@@ -32,6 +34,12 @@ class AIRequest:
 
         if not 0.0 <= self.temperature <= 2.0:
             raise ValueError("temperature must be in range [0.0, 2.0]")
+
+        # Convert pdf_file_path to Path if it's a string
+        if self.pdf_file_path is not None:
+            self.pdf_file_path = Path(self.pdf_file_path)
+            if not self.pdf_file_path.exists():
+                raise ValueError(f"PDF file does not exist: {self.pdf_file_path}")
 
 
 @dataclass

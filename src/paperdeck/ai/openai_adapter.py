@@ -71,33 +71,82 @@ class OpenAIAdapter(AIService):
             AIServiceError: For other API errors
         """
         try:
+            import logging
+            logger = logging.getLogger(__name__)
+
             client = self._get_client()
+
+            # Upload PDF file if provided
+            file_id = None
+            if request.pdf_file_path:
+                logger.info(f"Uploading PDF file to OpenAI: {request.pdf_file_path}")
+                try:
+                    with open(request.pdf_file_path, "rb") as pdf_file:
+                        file_obj = client.files.create(
+                            file=pdf_file,
+                            purpose="assistants"
+                        )
+                        file_id = file_obj.id
+                        logger.info(f"PDF file uploaded successfully: {file_id}")
+                except Exception as e:
+                    logger.error(f"Failed to upload PDF file: {e}")
+                    raise AIServiceError(f"PDF file upload failed: {e}")
 
             # Build messages
             messages = []
             if request.system_instructions:
                 messages.append({"role": "system", "content": request.system_instructions})
-            messages.append({"role": "user", "content": request.prompt})
+
+            # If PDF file was uploaded, use multipart content
+            if file_id:
+                user_content = [
+                    {"type": "text", "text": request.prompt},
+                    {"type": "file", "file": {"file_id": file_id}}
+                ]
+                messages.append({"role": "user", "content": user_content})
+            else:
+                # Text-only request
+                messages.append({"role": "user", "content": request.prompt})
 
             # Call OpenAI API
-            response = client.chat.completions.create(
-                model=request.model,
-                messages=messages,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-            )
+            logger.info(f"Calling OpenAI API with model {request.model}")
+
+            # GPT-5 models use max_completion_tokens instead of max_tokens
+            if request.model.startswith("gpt-5"):
+                response = client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    max_completion_tokens=request.max_tokens,
+                    temperature=request.temperature,
+                )
+            else:
+                response = client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    max_tokens=request.max_tokens,
+                    temperature=request.temperature,
+                )
 
             # Extract response
             content = response.choices[0].message.content
             tokens_used = response.usage.total_tokens if response.usage else None
             finish_reason = response.choices[0].finish_reason
 
+            # Clean up uploaded file if it exists
+            if file_id:
+                try:
+                    logger.info(f"Deleting uploaded PDF file: {file_id}")
+                    client.files.delete(file_id)
+                    logger.info("PDF file deleted successfully")
+                except Exception as e:
+                    logger.warning(f"Failed to delete uploaded file {file_id}: {e}")
+
             return AIResponse(
                 content=content,
                 model=response.model,
                 tokens_used=tokens_used,
                 finish_reason=finish_reason,
-                metadata={"provider": "openai"},
+                metadata={"provider": "openai", "file_id": file_id if file_id else None},
             )
 
         except ImportError as e:

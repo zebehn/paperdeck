@@ -10,7 +10,7 @@ from typing import List, Optional
 import logging
 
 from ..core.models import ExtractedElement, ElementType
-from ..core.config import ExtractionConfig
+from ..core.config import ExtractionConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class DocScalpelAdapter:
     Provides graceful fallback if DocScalpel is not installed.
     """
 
-    def __init__(self, config: Optional[ExtractionConfig] = None):
+    def __init__(self, config: Optional[ExtractionConfiguration] = None):
         """
         Initialize DocScalpel adapter.
 

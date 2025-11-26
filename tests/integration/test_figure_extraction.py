@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 from paperdeck.extraction.docscalpel_adapter import DocScalpelAdapter
 from paperdeck.extraction.element_processor import ElementProcessor
 from paperdeck.core.models import ElementType
-from paperdeck.core.config import ExtractionConfig
+from paperdeck.core.config import ExtractionConfiguration
 
 
 class TestFigureExtractionIntegration:
@@ -83,7 +83,7 @@ class TestEndToEndExtraction:
     @pytest.fixture
     def extraction_config(self):
         """Create extraction configuration."""
-        return ExtractionConfig(
+        return ExtractionConfiguration(
             confidence_threshold=0.75,
             element_types=[ElementType.FIGURE, ElementType.TABLE],
         )

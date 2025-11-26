@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 from paperdeck.extraction.docscalpel_adapter import DocScalpelAdapter
 from paperdeck.core.models import ElementType
-from paperdeck.core.config import ExtractionConfig
+from paperdeck.core.config import ExtractionConfiguration
 
 
 class TestDocScalpelAdapter:

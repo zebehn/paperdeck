@@ -161,6 +161,9 @@ class Paper:
     token_count: Optional[int] = None                # Cached token count
     was_truncated: bool = False                      # Whether text was truncated for context
 
+    # NEW: Element extraction integration (Feature 003)
+    extracted_elements: List['ExtractedElement'] = field(default_factory=list)  # Figures, tables, equations
+
     def __post_init__(self):
         """Validate paper attributes."""
         if not self.file_path.exists():
@@ -232,9 +235,53 @@ class Slide:
             for item in self.content:
                 latex += f"  \\item {item}\n"
             latex += "\\end{itemize}\n"
+        elif self.content_type == SlideContentType.FIGURE:
+            # Handle figure elements
+            if isinstance(self.content, list):
+                for element in self.content:
+                    latex += self._generate_element_latex(element)
+            else:
+                latex += self._generate_element_latex(self.content)
+        elif self.content_type == SlideContentType.TABLE:
+            # Handle table elements
+            if isinstance(self.content, list):
+                for element in self.content:
+                    latex += self._generate_element_latex(element)
+            else:
+                latex += self._generate_element_latex(self.content)
+        elif self.content_type == SlideContentType.EQUATION:
+            # Handle equation elements
+            if isinstance(self.content, list):
+                for element in self.content:
+                    latex += self._generate_element_latex(element)
+            else:
+                latex += self._generate_element_latex(self.content)
 
         latex += "\\end{frame}\n"
         return latex
+
+    def _generate_element_latex(self, element: 'ExtractedElement') -> str:
+        """Generate LaTeX code for an extracted element.
+
+        Args:
+            element: ExtractedElement (Figure, Table, or Equation)
+
+        Returns:
+            str: LaTeX code for the element
+        """
+        # Import here to avoid circular dependency
+        from ..generation.latex_generator import LaTeXGenerator
+
+        if element.element_type == ElementType.FIGURE:
+            return LaTeXGenerator.generate_figure_latex(element)
+        elif element.element_type == ElementType.TABLE:
+            # TODO: Implement table generation (Phase 6)
+            return f"% Table {element.sequence_number} (not yet implemented)\n"
+        elif element.element_type == ElementType.EQUATION:
+            # TODO: Implement equation generation (future phase)
+            return f"% Equation {element.sequence_number} (not yet implemented)\n"
+        else:
+            return f"% Unknown element type: {element.element_type}\n"
 
     def add_element(self, element_uuid: UUID) -> None:
         """Add extracted element reference to slide.

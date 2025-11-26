@@ -67,6 +67,21 @@ class DocScalpelAdapter:
         if element_types is None:
             element_types = [ElementType.FIGURE, ElementType.TABLE]
 
+        # Respect configuration flags if provided
+        if self.config:
+            if not self.config.extract_figures and ElementType.FIGURE in element_types:
+                element_types = [et for et in element_types if et != ElementType.FIGURE]
+                logger.info("Figure extraction disabled by configuration")
+
+            if not self.config.extract_tables and ElementType.TABLE in element_types:
+                element_types = [et for et in element_types if et != ElementType.TABLE]
+                logger.info("Table extraction disabled by configuration")
+
+        # If all types filtered out, return empty list
+        if not element_types:
+            logger.info("No element types enabled for extraction")
+            return []
+
         extracted = []
 
         # Extract figures

@@ -17,6 +17,7 @@ from ..core.models import (
     FigureElement,
     TableElement,
 )
+from ..core.config import ExtractionConfiguration
 from ..core.exceptions import ExtractionError
 from .docscalpel_adapter import DocScalpelAdapter
 from .element_processor import ElementProcessor
@@ -35,12 +36,14 @@ class PaperExtractor:
         self,
         confidence_threshold: float = 0.75,
         output_directory: Optional[Path] = None,
+        extraction_config: Optional[ExtractionConfiguration] = None,
     ):
         """Initialize the paper extractor.
 
         Args:
             confidence_threshold: Minimum confidence score for extracted elements (0.0-1.0)
             output_directory: Directory to save extracted element files
+            extraction_config: Optional extraction configuration with flags
         """
         if not 0.0 <= confidence_threshold <= 1.0:
             raise ValueError("confidence_threshold must be in range [0.0, 1.0]")
@@ -49,7 +52,7 @@ class PaperExtractor:
         self.output_directory = output_directory or Path("./extracted")
 
         # Initialize DocScalpel adapter and element processor
-        self.adapter = DocScalpelAdapter()
+        self.adapter = DocScalpelAdapter(config=extraction_config)
         self.processor = ElementProcessor(self.output_directory)
 
     def extract(

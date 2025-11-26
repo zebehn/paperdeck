@@ -73,6 +73,7 @@ def generate_presentation(
         extractor = PaperExtractor(
             confidence_threshold=config.extraction_config.confidence_threshold,
             output_directory=config.extraction_config.output_directory,
+            extraction_config=config.extraction_config,
         )
 
         # Extract elements (figures, tables, equations)
@@ -82,8 +83,7 @@ def generate_presentation(
         )
 
         # Add elements to paper
-        for element in elements:
-            paper.add_element(element)
+        paper.extracted_elements = elements  # Use the new field from Phase 5
 
         progress()
 

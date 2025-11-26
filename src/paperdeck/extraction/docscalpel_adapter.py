@@ -16,18 +16,46 @@ logger = logging.getLogger(__name__)
 
 
 class DocScalpelAdapter:
-    """
-    Adapter for DocScalpel library to extract figures and tables from PDFs.
+    """Adapter for DocScalpel library to extract figures and tables from PDFs.
 
-    Provides graceful fallback if DocScalpel is not installed.
+    This adapter provides a clean interface to the DocScalpel library for extracting
+    figures and tables from academic papers. It implements graceful degradation when
+    DocScalpel is not installed and respects configuration flags for selective extraction.
+
+    The adapter pattern isolates the DocScalpel dependency, making it easy to:
+    - Test without requiring DocScalpel installation
+    - Replace with alternative extraction backends
+    - Handle import errors gracefully in production
+
+    Attributes:
+        config: Optional extraction configuration with flags and settings
+        docscalpel_available: Whether DocScalpel library successfully loaded
+        docscalpel: Reference to the docscalpel module (if available)
+
+    Example:
+        >>> from pathlib import Path
+        >>> from paperdeck.core.models import ElementType
+        >>> adapter = DocScalpelAdapter()
+        >>> elements = adapter.extract(Path("paper.pdf"), [ElementType.FIGURE])
+        >>> print(f"Found {len(elements)} figures")
     """
 
     def __init__(self, config: Optional[ExtractionConfiguration] = None):
-        """
-        Initialize DocScalpel adapter.
+        """Initialize DocScalpel adapter with optional configuration.
+
+        Attempts to import the DocScalpel library. If import fails, logs a warning
+        and sets docscalpel_available to False, allowing graceful fallback.
 
         Args:
-            config: Configuration for extraction behavior
+            config: Optional extraction configuration controlling:
+                - extract_figures: Enable/disable figure extraction
+                - extract_tables: Enable/disable table extraction
+                - confidence_threshold: Minimum confidence for elements
+                - output_directory: Where to save extracted files
+
+        Note:
+            DocScalpel can be installed with:
+            pip install git+https://github.com/zebehn/docscalpel.git
         """
         self.config = config
         self.docscalpel_available = False
@@ -49,15 +77,38 @@ class DocScalpelAdapter:
         pdf_path: Path,
         element_types: Optional[List[ElementType]] = None,
     ) -> List[ExtractedElement]:
-        """
-        Extract figures and/or tables from PDF.
+        """Extract figures and/or tables from a PDF using DocScalpel.
+
+        This method orchestrates the extraction process, respecting configuration flags
+        and element type filters. It returns an empty list if DocScalpel is unavailable
+        or all element types are disabled.
+
+        The extraction process:
+        1. Check DocScalpel availability (graceful fallback if not installed)
+        2. Apply configuration flags (extract_figures, extract_tables)
+        3. Call specialized detection methods (_detect_figures, _detect_tables)
+        4. Return combined list of extracted elements
 
         Args:
-            pdf_path: Path to PDF file
-            element_types: Types of elements to extract (FIGURE, TABLE)
+            pdf_path: Path to the PDF file to process
+            element_types: Optional list of element types to extract.
+                Defaults to [ElementType.FIGURE, ElementType.TABLE].
+                Can be filtered by configuration flags.
 
         Returns:
-            List of extracted elements
+            List of ExtractedElement objects (FigureElement, TableElement).
+            Returns empty list if:
+            - DocScalpel is not installed
+            - All element types are disabled by configuration
+            - No elements found in the PDF
+            - Extraction errors occur (logged but not raised)
+
+        Example:
+            >>> adapter = DocScalpelAdapter()
+            >>> # Extract only figures
+            >>> figures = adapter.extract(pdf_path, [ElementType.FIGURE])
+            >>> # Extract both (default)
+            >>> all_elements = adapter.extract(pdf_path)
         """
         if not self.docscalpel_available:
             logger.info("DocScalpel not available, skipping element extraction")

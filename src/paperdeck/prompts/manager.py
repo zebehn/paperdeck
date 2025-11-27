@@ -28,10 +28,6 @@ class PromptTemplate:
         if not self.name:
             raise ValueError("name must not be empty")
 
-        # Validate required placeholder
-        if "{paper_content}" not in self.content:
-            raise ValueError("content must contain {paper_content} placeholder")
-
         # Validate balanced braces
         if not self._has_balanced_braces(self.content):
             raise ValueError("content must have balanced braces")
@@ -46,7 +42,7 @@ class PromptTemplate:
         if self.detail_level not in valid_levels:
             raise ValueError(f"detail_level must be in {valid_levels}")
 
-        # Extract placeholders
+        # Extract placeholders (optional - for backward compatibility)
         if not self.placeholders:
             self.placeholders = self._extract_placeholders(self.content)
 
@@ -83,29 +79,29 @@ class PromptTemplate:
         matches = re.findall(pattern, text)
         return list(set(matches))  # Remove duplicates
 
-    def render(self, context: Dict[str, str]) -> str:
-        """Fill placeholders with context values.
+    def render(self, context: Optional[Dict[str, str]] = None) -> str:
+        """Return template content (placeholder replacement is optional).
 
         Args:
-            context: Dictionary mapping placeholder names to values
+            context: Optional dictionary mapping placeholder names to values
 
         Returns:
-            str: Rendered template with placeholders replaced
+            str: Template content with optional placeholder replacement
 
-        Raises:
-            KeyError: If required placeholder is missing from context
+        Note:
+            Placeholders are optional. If context is provided, placeholders will be replaced.
+            If context is None or empty, template content is returned as-is.
         """
+        if not context or not self.placeholders:
+            return self.content
+
         rendered = self.content
 
-        # Check for required placeholders
-        for placeholder in self.placeholders:
-            if placeholder not in context:
-                raise KeyError(f"Required placeholder '{placeholder}' not found in context")
-
-        # Replace placeholders
+        # Replace placeholders if provided in context
         for key, value in context.items():
             placeholder = f"{{{key}}}"
-            rendered = rendered.replace(placeholder, value)
+            if placeholder in rendered:
+                rendered = rendered.replace(placeholder, value)
 
         return rendered
 
@@ -119,10 +115,6 @@ class PromptTemplate:
             # Check balanced braces
             if not self._has_balanced_braces(self.content):
                 return False, "Unbalanced braces in template content"
-
-            # Check required placeholder
-            if "{paper_content}" not in self.content:
-                return False, "Missing required {paper_content} placeholder"
 
             # Check content length
             if len(self.content) > 10000:

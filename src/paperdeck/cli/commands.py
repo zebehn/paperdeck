@@ -340,10 +340,8 @@ def generate_with_ai(
                     paper_content += f"- {filename} (page {tbl.page_number}, confidence: {tbl.confidence_score:.2f})\n"
                 paper_content += "\n"
 
-    context = {"paper_content": paper_content}
-
-    # Render prompt
-    prompt = template.render(context)
+    # Render prompt (no placeholder replacement needed - PDF is sent directly to LLM)
+    prompt = template.render()
 
     logger.info("Sending prompt to AI service for LaTeX generation...")
     logger.debug(f"Prompt length: {len(prompt)} characters")

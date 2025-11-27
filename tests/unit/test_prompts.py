@@ -36,16 +36,17 @@ class TestPromptTemplate:
         assert "title" in template.placeholders
         assert len(template.placeholders) == 3
 
-    def test_missing_required_placeholder_raises_error(self):
-        """Test that missing {paper_content} raises ValueError."""
-        with pytest.raises(ValueError, match="must contain {paper_content} placeholder"):
-            PromptTemplate(
-                name="invalid",
-                description="Invalid",
-                content="This template is missing the required placeholder",
-                style="technical",
-                detail_level="medium",
-            )
+    def test_template_without_placeholders_is_valid(self):
+        """Test that templates without placeholders are now valid."""
+        template = PromptTemplate(
+            name="no_placeholders",
+            description="No placeholders",
+            content="This template has no placeholders - PDF is sent directly to LLM",
+            style="technical",
+            detail_level="medium",
+        )
+        assert template.name == "no_placeholders"
+        assert len(template.placeholders) == 0
 
     def test_unbalanced_braces_raise_error(self):
         """Test that unbalanced braces raise ValueError."""
@@ -104,8 +105,8 @@ class TestPromptTemplate:
         })
         assert result == "Paper: This is a paper about AI, Title: AI Research"
 
-    def test_render_missing_placeholder_raises_error(self):
-        """Test that missing placeholder in context raises KeyError."""
+    def test_render_without_context_returns_content(self):
+        """Test that rendering without context returns content as-is."""
         template = PromptTemplate(
             name="test",
             description="Test",
@@ -113,8 +114,9 @@ class TestPromptTemplate:
             style="technical",
             detail_level="medium",
         )
-        with pytest.raises(KeyError, match="Required placeholder"):
-            template.render({"paper_content": "Some content"})  # Missing 'title'
+        # Render without context should return content as-is
+        result = template.render()
+        assert result == "Paper: {paper_content}, Title: {title}"
 
     def test_validate_returns_true_for_valid_template(self):
         """Test that validate returns True for valid template."""
@@ -146,8 +148,8 @@ class TestPromptTemplate:
         assert is_valid is False
         assert "Unbalanced braces" in error
 
-    def test_validate_detects_missing_required_placeholder(self):
-        """Test that validate detects missing required placeholder."""
+    def test_validate_allows_content_without_placeholders(self):
+        """Test that validate allows content without placeholders."""
         template = PromptTemplate(
             name="test",
             description="Test",
@@ -155,12 +157,12 @@ class TestPromptTemplate:
             style="technical",
             detail_level="medium",
         )
-        # Manually remove required placeholder
-        template.content = "Paper: just some text"
+        # Remove placeholders - should still be valid
+        template.content = "Paper: just some text with no placeholders"
 
         is_valid, error = template.validate()
-        assert is_valid is False
-        assert "paper_content" in error
+        assert is_valid is True
+        assert error is None
 
     def test_validate_detects_excessive_length(self):
         """Test that validate detects content over 10,000 characters."""
@@ -400,7 +402,7 @@ class TestPromptLibrary:
             style="technical",
             detail_level="medium",
         )
-        template2.content = "broken content"  # Break it
+        template2.content = "broken content with { unbalanced braces"  # Break it with unbalanced braces
 
         library.templates["valid"] = template1
         library.templates["invalid"] = template2

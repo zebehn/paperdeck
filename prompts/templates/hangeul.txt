@@ -35,10 +35,5 @@ Organize the presentation with the following flow, adjusting slightly based on t
 * **Formatting:** Use standard Beamer blocks or itemize lists for clarity.
 * **Clean Code:** Ensure all environments are properly closed with `\end{{...}}` matching their `\begin{{...}}`. The code must be compilable.
 
-**## Input Data**
-
-**[Research Paper Content]**
-{paper_content}
-
 **## Task**
-Generate the complete LaTeX code for the presentation based on the instructions above.
+Generate the complete LaTeX code for the presentation based on the provided research paper PDF and the instructions above.

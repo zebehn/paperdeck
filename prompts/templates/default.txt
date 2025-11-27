@@ -56,12 +56,4 @@ To generate the presentation:
    - Ensure the code is compilable (assume images are in the "extracted/" subdirectory relative to the .tex file).
    - If the paper is long, prioritize key contributions; aim for 10-20 slides total.
 
-Now, using the provided research paper content and extracted image files below, generate the LaTeX presentation code.
-
-# Research Paper Information
-
-{paper_content}
-
-# Task
-
-Generate the complete LaTeX beamer presentation following all the guidelines above.
+Now, using the provided research paper PDF and extracted image files, generate the LaTeX presentation code following all the guidelines above.

@@ -24,6 +24,10 @@ class ExtractionConfiguration:
     output_directory: Path = field(default_factory=lambda: Path("./extracted"))
     overwrite_existing: bool = False
 
+    # Feature 003: Element extraction control flags
+    extract_figures: bool = True
+    extract_tables: bool = True
+
     def __post_init__(self):
         """Validate extraction configuration."""
         if not 0.0 <= self.confidence_threshold <= 1.0:

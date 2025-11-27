@@ -21,19 +21,19 @@ Organize the presentation with the following flow, adjusting slightly based on t
     * If the paper cites "Fig. 1", use filename `extracted/figure_1.png`.
     * If the paper cites "Table 1", use filename `extracted/table_1.png`.
     * **IMPORTANT:** All image files are located in the `extracted/` subdirectory, so always include the `extracted/` prefix in image paths.
-    * (e.g., `\includegraphics{extracted/figure_10.png}`)
+    * (e.g., `\includegraphics{{extracted/figure_10.png}}`)
 * **Scaling:** Ensure all images and tables fit perfectly within the slide margins. Use appropriate scaling (e.g., `width=0.9\textwidth` or `keepaspectratio`) to prevent overflow.
 * **Layout Logic:**
     * **Wide Images:** Place text at the top and the image at the bottom. Do not use columns.
     * **Standard Images:** Place explanatory text on the **Left** (or Top) and the image on the **Right** (or Bottom).
 * **Contextual Descriptions:** Read the original captions from the paper to understand the image, but **do not** paste the full caption. Instead, write a brief, bulleted explanation of the image in the slide body (in Korean).
-* **Caption Formatting:** Generally, avoid using the standard `\caption{}` command. If a label is strictly necessary for clarity, use `\centering \scriptsize` text below the image. Never start a label with "Figure:" or "Table:".
+* **Caption Formatting:** Generally, avoid using the standard `\caption{{}}` command. If a label is strictly necessary for clarity, use `\centering \scriptsize` text below the image. Never start a label with "Figure:" or "Table:".
 
 **## 4. LaTeX Technical Guidelines**
 * **LaTeX Syntax Only:** Use ONLY LaTeX commands (e.g., `\begin{{frame}}`, `\end{{column}}`). NEVER use HTML/XML syntax (e.g., `<tag>`, `</tag>`). All commands must start with backslash `\`.
 * **Math Mode:** Always use LaTeX math mode for symbols like `<`, `>`, or variables (e.g., use `$<$`, `$>$`).
 * **Formatting:** Use standard Beamer blocks or itemize lists for clarity.
-* **Clean Code:** Ensure all environments are properly closed with `\end{...}` matching their `\begin{...}`. The code must be compilable.
+* **Clean Code:** Ensure all environments are properly closed with `\end{{...}}` matching their `\begin{{...}}`. The code must be compilable.
 
 **## Input Data**
 

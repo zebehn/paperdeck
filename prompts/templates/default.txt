@@ -26,28 +26,28 @@ To generate the presentation:
 2. **Handle Figures and Tables:**
    - Include all provided image files in the appropriate slides. For example:
      - Place "figure_1.png" on the slide discussing the content related to Fig. 1, with a caption matching the paper's description.
-     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{extracted/figure_1.png}).
+     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{{extracted/figure_1.png}}).
      - **IMPORTANT**: All image files are in the "extracted/" subdirectory, so always use the "extracted/" prefix in image paths (e.g., extracted/figure_1.png, extracted/table_2.png).
      - If a figure or table spans multiple concepts, reference it in multiple slides if needed.
    - If no image file is provided for a mentioned figure/table, note it as a placeholder (e.g., "Figure X (not extracted)").
 
 3. **LaTeX Structure Guidelines:**
    - **LaTeX Syntax Only:** Use ONLY LaTeX commands (e.g., \begin{{frame}}, \end{{column}}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
-   - Use the Beamer document class: \documentclass\{beamer\}.
-   - Include necessary packages: \usepackage\{graphicx\} for images, \usepackage\{amsmath\} for math, \usepackage\{biblatex\} if needed for citations (but keep bibliography simple).
-   - Theme: Use a clean theme like \usetheme\{Madrid\} or similar for readability.
+   - Use the Beamer document class: \documentclass\{{beamer\}}.
+   - Include necessary packages: \usepackage\{{graphicx\}} for images, \usepackage\{{amsmath\}} for math, \usepackage\{{biblatex\}} if needed for citations (but keep bibliography simple).
+   - Theme: Use a clean theme like \usetheme\{{Madrid\}} or similar for readability.
    - Title Slide: Include the paper's title, authors, institutions, venue, year.
    - Citation Slide: Immediately after the title slide, create a dedicated slide with full citation details (e.g., in APA or BibTeX format if applicable).
    - Content Slides:
-     - Use \frame\{\} or \begin\{frame\} for each slide.
-     - Structure with \frametitle\{\} for slide titles.
+     - Use \frame\{{\}} or \begin\{{frame\}} for each slide.
+     - Structure with \frametitle\{{\}} for slide titles.
      - Use itemize or enumerate for bullet points.
      - Limit content per slide: 3-6 bullets max, with short phrases.
-     - For methods or results, use columns or blocks if complex (e.g., \begin\{columns\} for side-by-side text and image).
+     - For methods or results, use columns or blocks if complex (e.g., \begin\{{columns\}} for side-by-side text and image).
    - Escape Special Characters:
      - Replace arrows like "→" with \rightarrow in math mode ($ \rightarrow $).
      - Escape inequalities like "<" as $<$ in math mode ($<$).
-     - Use \$ for inline math, \begin\{equation\} for display math.
+     - Use \$ for inline math, \begin\{{equation\}} for display math.
      - Handle other LaTeX reserved characters (e.g., \& for &, \% for %, etc.).
    - End with a "Thank You" or Q&A slide.
 

@@ -65,7 +65,7 @@ paperdeck generate [OPTIONS] PDF_PATH
 - `PDF_PATH` - Path to the input PDF file (required)
 
 **Options:**
-- `-o, --output PATH` - Output directory (default: ./paperdeck_output)
+- `-o, --output PATH` - Output directory (default: ./<pdf_filename>)
 - `-t, --theme TEXT` - Beamer theme (default: Madrid)
 - `-p, --prompt TEXT` - Prompt template (default: default)
 - `--provider TEXT` - AI provider: openai, anthropic, ollama, lmstudio (default: openai)
@@ -159,7 +159,7 @@ extraction:
     - TABLE
     - EQUATION
 
-output_directory: ~/Documents/paperdeck_output
+# output_directory: ~/Documents/papers  # Optional: override default naming
 default_theme: Madrid
 default_prompt: default
 log_level: INFO

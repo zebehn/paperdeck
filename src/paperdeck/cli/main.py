@@ -36,7 +36,7 @@ def cli(ctx):
     "--output",
     "output_path",
     type=click.Path(path_type=Path),
-    help="Output directory for generated files (default: ./paperdeck_output)",
+    help="Output directory for generated files (default: ./<pdf_filename>)",
 )
 @click.option(
     "-t",
@@ -121,7 +121,12 @@ def generate(
     from .commands import generate_presentation
 
     # Set up configuration
-    output_dir = output_path or Path("./paperdeck_output")
+    # Use PDF filename (without extension) as default output directory
+    if output_path:
+        output_dir = output_path
+    else:
+        pdf_stem = pdf_path.stem  # Get filename without extension
+        output_dir = Path(f"./{pdf_stem}")
 
     # Configure AI service
     ai_config_kwargs = {"default_provider": provider}

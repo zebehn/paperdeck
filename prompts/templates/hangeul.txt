@@ -1,26 +1,43 @@
-You are an expert in creating LaTeX presentations using the Beamer package. Your task is to generate a complete LaTeX document for a slide-based presentation that summarizes a given research paper.
-제공된 논문(pdf 파일)을 깊이 이해해서 논문 내용을 일목요연하게 발표할 수 있는 발표 자료를 제작해줘.
-- 발표자료는 한글로 작성해줘.
-- 발표의 구성은 서지 정보(저자와 기관 정보, 발표처 포함), 핵심 요약(연구 분야, 문제, 핵심 기여 내용), 문제 정의와 접근방법, 실험 내용과 결과, 실험에 활용한 데이터 규모, 구성 등 상세 내역, 결론, 향후 연구 주제 제안을 포함하되 논문 성격에 따라 조정해서 작성해줘.
-- 발표자료는 beamer 패키지를 기반으로 LaTeX 코드로 생성해줘.
-- 발표자료에 Fig.1을 삽입하려면 figure_1.png를 삽입하면 돼. 비슷하게 Table 1은 table_1.png, Fig. 10은 figure_10.png를 삽입하도록 LaTeX 코드를 생성해줘.
-- 본문의 그림과 표의 크기를 살펴보고, 그림과 표가 발표자료에 삽입되었을 때 페이지 밖으로 벗어나지 않고 페이지 안에 잘 정렬될 수 있도록 구성해줘.
-- 논문 원문에 포함된 각 Figure와 Table에 딸린 Caption을 참고해서 간략하지만 그림과 표를 이해할 수 있는 설명을 추가해줘.
-- 발표자료 안의 모든 문구는 "~ 이다. ~입니다."와 같은 형식이 아니라 "~임, ~함" 등과 같이 간략하게 작성해줘. (예: "오픈 소스 데이터로 사전 학습된 VLA 모델로 시작합니다." --> "기반 모델은 오픈 소스 데이터로 사전 학습한 VLA 모델", "실패한 케이스에 대해 사람이 개입하여 수정한 데이터를 포함합니다." --> "실패 시 사람이 개입하여 데이터를 수정" 등)
-- 그림과 표의 Caption은 추가하지 말아줘. Caption이 꼭 필요한 경우 center aligned로 scriptsize로 설정해.
-- “>”, “<“과 같은 수학 기호나 특수 문자는 수식 모드를 사용해줘.
-- 문장 끝에 마침표를 찍지 않는다.
-- 슬라이드 내 그림/표와 내용 설명문을 넣을 때 설명문을 위나 왼쪽에 넣고 그림/표는 아래 또는 오른쪽에 넣는다.
-- 그림과 표가 가로로 긴 경우에는 column 구성으로 하지 말고 위와 아래에 콘텐트를 배치한다.
-- [cite_start], [cite:…] 태그를 사용하지 마.
-- Caption이 'Figure:' 또는 'Table:'로 시작하지 않도록 설정해줘.
+You are an expert academic researcher and LaTeX developer specializing in the Beamer package. Your task is to analyze the provided research paper deeply and generate a complete LaTeX Beamer presentation code.
 
-Now, using the provided research paper content and extracted image files below, generate the LaTeX presentation code.
+**## 1. Language & Tone**
+* **Language:** The content of the slides must be written entirely in **Korean**.
+* **Conciseness (Critical):** Do not use full sentences or polite endings (e.g., avoid "~입니다", "~이다"). Instead, use a concise, **nominal style (개조식)** ending in nouns or nominalized verbs (e.g., use "~임", "~함", or simple noun phrases).
+    * *Example:* "It starts with a VLA model pretrained on open source data." $\rightarrow$ "오픈 소스 데이터로 사전 학습한 VLA 모델 기반"
+    * *Example:* "Human intervention is used to correct failed cases." $\rightarrow$ "실패 시 사람이 개입하여 데이터 수정"
+* **Punctuation:** Do not place a period (.) at the end of bullet points or phrases.
 
-# Research Paper Information
+**## 2. Presentation Structure**
+Organize the presentation with the following flow, adjusting slightly based on the paper's nature if necessary:
+1.  **Title Slide:** Bibliographic info (Title, Authors, Affiliations, Publication Venue/Date).
+2.  **Executive Summary:** Research field, core problem, and key contributions.
+3.  **Problem Definition & Approach:** How the problem is defined and the methodology used to solve it.
+4.  **Experiments & Results:** Detailed experimental setup (data scale, configuration) and key results.
+5.  **Conclusion:** Summary of findings.
+6.  **Future Work:** Suggestions for related or future studies based on your analysis.
 
+**## 3. Image & Table Handling**
+* **Filename Mapping:** Insert images using the following naming convention:
+    * If the paper cites "Fig. 1", use filename `extracted/figure_1.png`.
+    * If the paper cites "Table 1", use filename `extracted/table_1.png`.
+    * **IMPORTANT:** All image files are located in the `extracted/` subdirectory, so always include the `extracted/` prefix in image paths.
+    * (e.g., `\includegraphics{extracted/figure_10.png}`)
+* **Scaling:** Ensure all images and tables fit perfectly within the slide margins. Use appropriate scaling (e.g., `width=0.9\textwidth` or `keepaspectratio`) to prevent overflow.
+* **Layout Logic:**
+    * **Wide Images:** Place text at the top and the image at the bottom. Do not use columns.
+    * **Standard Images:** Place explanatory text on the **Left** (or Top) and the image on the **Right** (or Bottom).
+* **Contextual Descriptions:** Read the original captions from the paper to understand the image, but **do not** paste the full caption. Instead, write a brief, bulleted explanation of the image in the slide body (in Korean).
+* **Caption Formatting:** Generally, avoid using the standard `\caption{}` command. If a label is strictly necessary for clarity, use `\centering \scriptsize` text below the image. Never start a label with "Figure:" or "Table:".
+
+**## 4. LaTeX Technical Guidelines**
+* **Math Mode:** Always use LaTeX math mode for symbols like `<`, `>`, or variables (e.g., use `$<$`, `$>$`).
+* **Formatting:** Use standard Beamer blocks or itemize lists for clarity.
+* **Clean Code:** Do not use `` or `` tags. Ensure the code is compilable.
+
+**## Input Data**
+
+**[Research Paper Content]**
 {paper_content}
 
-# Task
-
-Generate the complete LaTeX beamer presentation following all the guidelines above.
+**## Task**
+Generate the complete LaTeX code for the presentation based on the instructions above.

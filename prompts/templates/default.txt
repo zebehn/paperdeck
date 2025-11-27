@@ -26,7 +26,8 @@ To generate the presentation:
 2. **Handle Figures and Tables:**
    - Include all provided image files in the appropriate slides. For example:
      - Place "figure_1.png" on the slide discussing the content related to Fig. 1, with a caption matching the paper's description.
-     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{figure_1.png}).
+     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{extracted/figure_1.png}).
+     - **IMPORTANT**: All image files are in the "extracted/" subdirectory, so always use the "extracted/" prefix in image paths (e.g., extracted/figure_1.png, extracted/table_2.png).
      - If a figure or table spans multiple concepts, reference it in multiple slides if needed.
    - If no image file is provided for a mentioned figure/table, note it as a placeholder (e.g., "Figure X (not extracted)").
 
@@ -51,7 +52,7 @@ To generate the presentation:
 
 4. **Output Format:**
    - Generate the full LaTeX code as a single .tex file content.
-   - Ensure the code is compilable (assume images are in the same directory).
+   - Ensure the code is compilable (assume images are in the "extracted/" subdirectory relative to the .tex file).
    - If the paper is long, prioritize key contributions; aim for 10-20 slides total.
 
 Now, using the provided research paper content and extracted image files below, generate the LaTeX presentation code.

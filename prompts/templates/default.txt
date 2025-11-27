@@ -32,7 +32,7 @@ To generate the presentation:
    - If no image file is provided for a mentioned figure/table, note it as a placeholder (e.g., "Figure X (not extracted)").
 
 3. **LaTeX Structure Guidelines:**
-   - **LaTeX Syntax Only:** Use ONLY LaTeX commands (e.g., \begin\{frame\}, \end\{column\}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
+   - **LaTeX Syntax Only:** Use ONLY LaTeX commands (e.g., \begin{{frame}}, \end{{column}}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
    - Use the Beamer document class: \documentclass\{beamer\}.
    - Include necessary packages: \usepackage\{graphicx\} for images, \usepackage\{amsmath\} for math, \usepackage\{biblatex\} if needed for citations (but keep bibliography simple).
    - Theme: Use a clean theme like \usetheme\{Madrid\} or similar for readability.

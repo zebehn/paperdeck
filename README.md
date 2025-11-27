@@ -12,11 +12,7 @@
 - 📄 **Automatic PDF Parsing** - Extracts figures, tables, equations, and text from research papers
 - 🤖 **AI-Powered Organization** - Intelligently organizes content into logical presentation slides
 - 🎨 **Multiple Themes** - Supports all standard Beamer themes (Madrid, Copenhagen, Berkeley, etc.)
-- 💬 **Flexible Prompts** - Choose from multiple presentation styles:
-  - **Technical** - Detailed presentations for expert audiences
-  - **Accessible** - Simplified content for general audiences
-  - **Pedagogical** - Educational presentations for learners
-  - **Default** - Balanced technical content
+- 💬 **Flexible Prompts** - Customize presentation generation with built-in or custom prompt templates
 - 🔌 **Multi-Provider AI Support**:
   - OpenAI (GPT-4, GPT-3.5)
   - Anthropic (Claude)
@@ -56,25 +52,6 @@ pip install -e .
 pip install docling
 ```
 
-### Basic Usage
-
-```bash
-# Generate a presentation from a PDF paper
-paperdeck generate paper.pdf
-
-# Use a specific theme
-paperdeck generate paper.pdf --theme Copenhagen
-
-# Use a specific prompt style
-paperdeck generate paper.pdf --prompt technical
-
-# Use Ollama (local, no API key needed)
-paperdeck generate paper.pdf --provider ollama
-
-# Use OpenAI with API key
-paperdeck generate paper.pdf --provider openai --api-key sk-xxx
-```
-
 ## 📖 Documentation
 
 ### Command Reference
@@ -110,8 +87,9 @@ paperdeck generate my_paper.pdf
 # Custom output directory and theme
 paperdeck generate my_paper.pdf -o presentations/ -t Berkeley
 
-# Technical presentation for experts
-paperdeck generate my_paper.pdf -p technical
+# Use custom prompt template (e.g., hangeul for Korean language presentations)
+# Demonstrates customizability of prompts for specific purposes
+paperdeck generate my_paper.pdf -p hangeul
 
 # Use GPT-4 with verbose output
 paperdeck generate my_paper.pdf --model gpt-4 -v
@@ -133,23 +111,15 @@ paperdeck list-prompts
 
 **Output:**
 ```
-Available prompt templates (4):
-
-  • accessible [builtin]
-    Simplified presentation for general audiences
-    Style: accessible, Detail: low
+Available prompt templates (2):
 
   • default [builtin]
     Standard presentation template with balanced technical content
     Style: technical, Detail: medium
 
-  • pedagogical [builtin]
-    Educational presentation structured for learning
-    Style: pedagogical, Detail: medium
-
-  • technical [builtin]
-    Detailed technical presentation for expert audiences
-    Style: technical, Detail: high
+  • hangeul [builtin]
+    Korean language presentation template
+    Style: custom, Detail: medium
 ```
 
 #### `paperdeck version`
@@ -200,34 +170,49 @@ log_level: INFO
 
 ### Prompt Templates
 
-PaperDeck includes four built-in prompt templates:
+PaperDeck includes two built-in prompt templates:
 
-#### 1. **Default** (Balanced)
+#### 1. **Default**
 - Suitable for: General academic presentations
 - Detail level: Medium
 - Audience: Academic researchers
+- Features: Balanced technical content with clear structure
 
-#### 2. **Technical** (High Detail)
-- Suitable for: Conference presentations, expert audiences
-- Detail level: High
-- Audience: Researchers and technical experts
-- Features: Preserves mathematical formulations, emphasizes methodology
-
-#### 3. **Accessible** (Simplified)
-- Suitable for: Departmental talks, broader audiences
-- Detail level: Low
-- Audience: General audience with basic technical knowledge
-- Features: Simplified jargon, focuses on big picture
-
-#### 4. **Pedagogical** (Educational)
-- Suitable for: Teaching, workshops, tutorials
+#### 2. **Hangeul** (Korean Language)
+- Suitable for: Korean language presentations
 - Detail level: Medium
-- Audience: Students and learners
-- Features: Progressive concept building, includes learning objectives
+- Audience: Korean-speaking academic audiences
+- Features: Korean language output with appropriate academic terminology
 
 ### Custom Prompt Templates
 
-Create custom prompts in `~/.paperdeck/prompts/`:
+You can create custom prompts in two ways:
+
+#### Option 1: Use a Custom Prompt File
+
+Create a prompt file anywhere and reference it by path:
+
+**my_custom_prompt.txt:**
+```
+Create a presentation focusing on [your specific requirements].
+
+Paper content:
+{paper_content}
+
+Instructions:
+- [Your custom instruction 1]
+- [Your custom instruction 2]
+- ...
+```
+
+**Usage:**
+```bash
+paperdeck generate paper.pdf --prompt /path/to/my_custom_prompt.txt
+```
+
+#### Option 2: Add to Prompt Library
+
+Create custom prompts in `~/.paperdeck/prompts/` for reusable templates:
 
 **my_prompt.txt:**
 ```
@@ -253,6 +238,11 @@ Instructions:
     "is_builtin": false
   }
 }
+```
+
+**Usage:**
+```bash
+paperdeck generate paper.pdf --prompt my_prompt
 ```
 
 ## 🎨 Beamer Themes

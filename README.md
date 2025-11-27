@@ -47,9 +47,6 @@ pip install -r requirements.txt
 
 # Install in development mode
 pip install -e .
-
-# Install Docling for PDF extraction
-pip install docling
 ```
 
 ## 📖 Documentation
@@ -369,10 +366,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Docling](https://github.com/docling-project/docling) - PDF element extraction (IBM Research)
+- [DocScalpel](https://github.com/zebehn/docscalpel) - PDF figure and table extraction
+- [PyMuPDF](https://pymupdf.readthedocs.io/) - PDF text extraction
 - [Beamer](https://github.com/josephwright/beamer) - LaTeX presentation class
 - [Click](https://click.palletsprojects.com/) - CLI framework
-- [Jinja2](https://jinja.palletsprojects.com/) - Template engine
 
 ## 📧 Contact & Support
 
@@ -415,12 +412,6 @@ export OPENAI_API_KEY="sk-..."
 
 # Or use --api-key flag
 paperdeck generate paper.pdf --api-key sk-...
-```
-
-**Issue: "Docling not installed"**
-```bash
-# Install from PyPI
-pip install docling
 ```
 
 **Issue: LaTeX compilation fails**

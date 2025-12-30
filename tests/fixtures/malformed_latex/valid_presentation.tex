@@ -1,0 +1,49 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+
+\title{Valid Test Presentation}
+\author{Test Author}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Introduction}
+  This is a properly structured frame with no errors.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Two Column Layout}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      Content in first column:
+      \begin{itemize}
+        \item First item
+        \item Second item
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      Content in second column:
+      \begin{enumerate}
+        \item Numbered item 1
+        \item Numbered item 2
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusion}
+  All environments are properly matched.
+  \begin{itemize}
+    \item No missing end tags
+    \item No duplicate blocks
+    \item No unmatched begin/end pairs
+  \end{itemize}
+\end{frame}
+
+\end{document}

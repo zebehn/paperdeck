@@ -178,6 +178,15 @@ class AppConfiguration:
     extraction_config: ExtractionConfiguration = field(default_factory=ExtractionConfiguration)
     text_extraction: TextExtractionConfig = field(default_factory=TextExtractionConfig)
 
+    # LaTeX validation and auto-fix settings (Feature 005)
+    enable_validation: bool = True  # Enable LaTeX structure validation
+    enable_autofix: bool = True  # Enable automatic fixing of detected errors
+    enable_retry: bool = True  # Enable retry on compilation failure
+    max_retry_attempts: int = 2  # Maximum number of compilation retry attempts
+    validation_environments: List[str] = field(
+        default_factory=lambda: ['frame', 'columns', 'column', 'itemize', 'enumerate']
+    )  # LaTeX environments to validate
+
     def __post_init__(self):
         """Validate application configuration."""
         # Expand user paths

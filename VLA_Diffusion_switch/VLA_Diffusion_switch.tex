@@ -1,0 +1,651 @@
+\documentclass{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+
+\title[Vision-Language-Action + Diffusion Switching]{Vision-Language-Action Model and Diffusion Policy Switching Enables Dexterous Control of an Anthropomorphic Hand}
+\author[Pan, Junge, Hughes]{Cheng Pan \and Kai Junge \and Josie Hughes}
+\institute[EPFL]{Faculty of Mechanical Engineering\\Swiss Federal Institute of Technology Lausanne (EPFL)\\Lausanne, Switzerland}
+\date{2024}
+
+\begin{document}
+
+%------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Citation}
+  \small
+  Pan, C., Junge, K., \& Hughes, J. (2024). \textit{Vision-Language-Action Model and Diffusion Policy Switching Enables Dexterous Control of an Anthropomorphic Hand}.\\[0.4cm]
+
+  \textbf{Type:} Robotics / Manipulation, Vision-Language-Action and Diffusion Policies\\[0.2cm]
+  \textbf{Affiliation:} Faculty of Mechanical Engineering, EPFL, Switzerland\\[0.2cm]
+  \textbf{Preprint:} Project page: \texttt{https://vla-diffu-switch.github.io/}\\[0.2cm]
+
+  \textbf{Keywords:}
+  \begin{itemize}
+    \item Vision-Language-Action (VLA) models
+    \item Diffusion policy for robot control
+    \item Dexterous manipulation, anthropomorphic hand
+    \item Hybrid high-level / low-level control
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Research Area and Background (1/2)}
+  \small
+  \begin{itemize}
+    \item Dexterous manipulation requires:
+      \begin{itemize}
+        \item Advanced task planning
+        \item Wrist trajectory generation
+        \item Contextual grasp selection
+        \item Precise multi-finger control
+      \end{itemize}
+    \item Large Vision-Language-Action (VLA) models:
+      \begin{itemize}
+        \item Translate language commands to robot actions
+        \item Trained on large-scale manipulation datasets (e.g., Open-X-Embodiment, DROID, BridgeData v2)
+      \end{itemize}
+    \item Examples: RT-1, RT-2, Octo, openVLA
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Research Area and Background (2/2)}
+  \small
+  \begin{itemize}
+    \item Existing VLA deployments:
+      \begin{itemize}
+        \item Primarily on 1 DoF pinch grippers
+        \item Limited evidence on multi-fingered, anthropomorphic hands
+      \end{itemize}
+    \item Diffusion policy models:
+      \begin{itemize}
+        \item Well-suited for robot motion learning and planning
+        \item Can generate smooth, precise motor commands
+        \item Capture contextual information from sensor inputs
+      \end{itemize}
+    \item Prior diffusion work includes multi-fingered hands, but typically task-specific
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Goal of the Research}
+  \small
+  \begin{itemize}
+    \item Develop a \textbf{hybrid control framework} combining:
+      \begin{itemize}
+        \item Fine-tuned openVLA model for \textbf{language-conditioned high-level planning}
+        \item Diffusion policy for \textbf{low-level dexterous grasping control}
+      \end{itemize}
+    \item Enable \textbf{autonomous pick-and-place} with:
+      \begin{itemize}
+        \item Language-specified target object and placement location
+        \item Multi-fingered anthropomorphic hand (ADAPT Hand 2)
+      \end{itemize}
+    \item Demonstrate \textbf{event-based switching} between VLA and diffusion policies
+    \item Achieve higher success rates than VLA-only control
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{State-of-the-Art and Limitations}
+  \small
+  \begin{itemize}
+    \item \textbf{VLAs (e.g., RT-1, RT-2, Octo, openVLA):}
+      \begin{itemize}
+        \item Strength: generalizable language-to-action mapping
+        \item Limitation: demonstrated mainly on simple grippers
+        \item Unclear precision for complex anthropomorphic hands
+      \end{itemize}
+    \item \textbf{Visual servoing:}
+      \begin{itemize}
+        \item Effective for approaching and grasping
+        \item Limited use of contextual/environmental information for grasp strategy
+      \end{itemize}
+    \item \textbf{Diffusion policies:}
+      \begin{itemize}
+        \item Strength: precise, smooth control; multi-modal behavior
+        \item Limitation: task- and object-specific training; limited global planning
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Research Motivation}
+  \small
+  \begin{itemize}
+    \item VLAs:
+      \begin{itemize}
+        \item Good at high-level planning from language
+        \item Struggle with precise, contact-rich dexterous manipulation
+      \end{itemize}
+    \item Diffusion policies:
+      \begin{itemize}
+        \item Good at local, precise control and exploiting context
+        \item Lack global task planning and language grounding
+      \end{itemize}
+    \item \textbf{Key idea:} Combine VLA and diffusion to exploit complementary strengths
+      \begin{itemize}
+        \item VLA: move hand near target from language
+        \item Diffusion: execute robust grasp and release
+      \end{itemize}
+    \item Target platform: compliant anthropomorphic ADAPT Hand 2 (13 DoF)
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Problem Definition}
+  \small
+  \begin{itemize}
+    \item Task: \textbf{Autonomous pick-and-place} with:
+      \begin{itemize}
+        \item Language command: ``pick [object] and place on [plate color]''
+        \item Multiple objects and placement locations
+      \end{itemize}
+    \item Robot:
+      \begin{itemize}
+        \item ADAPT Hand 2 (13 DoF) mounted on UR5 arm
+        \item Two RGB cameras: static (cam1) and wrist-mounted (cam2)
+      \end{itemize}
+    \item Requirements:
+      \begin{itemize}
+        \item Language-conditioned high-level motion
+        \item Precise dexterous grasping and release
+        \item Automatic switching between controllers
+      \end{itemize}
+    \item Baseline: VLA-only control for full pick-and-place
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Proposed Hybrid Method: Overview}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item \textbf{VLA (openVLA, fine-tuned):}
+          \begin{itemize}
+            \item Input: language command + images (cam1+cam2)
+            \item Output: 6D end-effector pose + scalar grasp/event signal
+          \end{itemize}
+        \item \textbf{Diffusion policy:}
+          \begin{itemize}
+            \item Input: images (cam1, cam2) + state
+            \item Output: multi-dimensional hand joint commands
+          \end{itemize}
+        \item \textbf{Event signal $\sigma$:}
+          \begin{itemize}
+            \item Shared scalar signal to mark key task events
+            \item Drives automatic switching between policies
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_1.png}
+      \captionof{figure}{Combined VLA and diffusion policy approach for dexterous manipulation (Fig.~1).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{VLA \& Diffusion Switching Framework}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Use a \textbf{common event signal} $\sigma$ to:
+          \begin{itemize}
+            \item Detect proximity to object / plate (VLA)
+            \item Detect successful grasp (diffusion)
+          \end{itemize}
+        \item Execution sequence:
+          \begin{itemize}
+            \item VLA moves hand near object; $\sigma$ rises
+            \item Switch to diffusion for grasping; $\sigma$ rises at successful lift
+            \item Switch back to VLA for transport and placement
+          \end{itemize}
+        \item Object-specific diffusion policies:
+          \begin{itemize}
+            \item Selected via lookup table from language input
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_2.png}
+      \captionof{figure}{Switching between VLA and diffusion using event signal $\sigma$ (Fig.~2).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Robotic Platform: ADAPT Hand 2}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Anthropomorphic hand with 13 motors
+        \item Series elastic actuation at base joints:
+          \begin{itemize}
+            \item Compliance for safe interaction
+            \item Physical filtering of noisy control signals
+          \end{itemize}
+        \item Anatomical kinematic design and continuous soft skin
+        \item Mounted on UR5 arm for 6-DoF positioning
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_3.png}
+      \captionof{figure}{ADAPT Hand 2 with compliant joints and continuous skin (Fig.~3).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Experimental Setup and Teleoperation}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Teleoperation for data collection:
+          \begin{itemize}
+            \item Apple Vision Pro hand tracking
+            \item Joint-to-joint mapping to UR5 + ADAPT Hand 2
+          \end{itemize}
+        \item Sensors:
+          \begin{itemize}
+            \item cam1: static world camera
+            \item cam2: wrist-mounted camera
+          \end{itemize}
+        \item Objects:
+          \begin{itemize}
+            \item Red pepper, tape roll, piece of paper
+            \item Two plates (yellow, purple) as placement targets
+          \end{itemize}
+        \item Inference hardware: NVIDIA RTX 4090, $\approx$5 Hz control
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_4.png}
+      \captionof{figure}{Teleoperation setup and test objects/plates (Fig.~4).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Data Collection Strategy}
+  \small
+  \begin{itemize}
+    \item \textbf{VLA dataset (Fig.~5A):}
+      \begin{itemize}
+        \item Teleoperated full pick-and-place trajectories
+        \item Operator records event signal via controller
+        \item Only pre- and post-grasp segments used for training
+        \item Hand deliberately closed in mid-air when event signal first applied
+        \item 20 trials per object-placement combination
+      \end{itemize}
+    \item \textbf{Diffusion dataset (Fig.~5B):}
+      \begin{itemize}
+        \item Only grasping segments
+        \item Hand initialized $\approx$5 cm above object
+        \item 40 trials (tape, paper), 30 trials (pepper)
+        \item Includes multiple grasp strategies and failure-recovery attempts
+        \item Event signal non-zero only in final 10 steps of successful trials
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Data Collection Illustration}
+  \small
+  \centering
+  \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_5.png}
+  \captionof{figure}{Data collection for VLA (A) and diffusion policy (B), including event signal annotation (Fig.~5).}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Model Training Details}
+  \small
+  \begin{itemize}
+    \item \textbf{VLA (openVLA fine-tuning):}
+      \begin{itemize}
+        \item Inputs: concatenated images from cam1 (224$\times$144) and cam2 (224$\times$80)
+        \item Images vertically concatenated into single frame
+        \item Default openVLA fine-tuning settings, batch size 22
+        \item No image augmentation (fixed camera pose and lighting)
+        \item Trained until action accuracy $>$ 95\% ($\approx$50k steps)
+        \item Trained on A100-80GB GPU
+      \end{itemize}
+    \item \textbf{Diffusion policy:}
+      \begin{itemize}
+        \item Inputs: images from cam1, cam2 (320$\times$240), random crop to 288$\times$216
+        \item CNN-based diffusion policy as in prior work
+        \item Trained for 1500 epochs on custom GPU
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Experimental Design}
+  \small
+  \begin{itemize}
+    \item \textbf{VLA evaluation:}
+      \begin{itemize}
+        \item Full grasping and placing with VLA-only
+        \item Objects: pepper, tape (blue paper excluded due to convergence issues)
+        \item 5 repeats per object-plate combination
+      \end{itemize}
+    \item \textbf{Diffusion evaluation:}
+      \begin{itemize}
+        \item Success vs. initial hand offset (5, 10, 15 cm)
+        \item Multi-modal grasping (slide \& pick vs. direct pick)
+        \item Failure recovery behavior
+      \end{itemize}
+    \item \textbf{Combined VLA + diffusion:}
+      \begin{itemize}
+        \item Full pick-and-place for all object-plate combinations
+        \item 5 trials per combination
+        \item Compare success scores to VLA-only baseline
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Evaluation Metric for Pick-and-Place}
+  \small
+  \begin{itemize}
+    \item Success scored on a 0--1 scale:
+      \begin{itemize}
+        \item 1.00: Full task success
+        \item 0.75: Failed to place on correct plate
+        \item 0.50: Placed on incorrect plate
+        \item 0.25: Failed to grasp correct object
+        \item 0.00: Approached wrong object
+      \end{itemize}
+    \item Allows more nuanced comparison than binary success
+    \item Applied to both VLA-only and VLA+diffusion conditions
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{VLA-Only Performance: Success Rates}
+  \small
+  \begin{itemize}
+    \item VLA fine-tuned on full grasping and placing for pepper and tape
+    \item Achieved $>$95\% action accuracy in training
+    \item Test success scores (Table I):
+  \end{itemize}
+  \vspace{0.2cm}
+  \centering
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    End Target & Pepper & Tape \\
+    \midrule
+    Purple plate & 0.45 & 0.20 \\
+    Yellow plate & 0.40 & 0.25 \\
+    \bottomrule
+  \end{tabular}
+  \vspace{0.2cm}
+
+  \small
+  \begin{itemize}
+    \item VLA-only can occasionally grasp pepper
+    \item Fails consistently on tape, which requires more precise dexterity
+    \item Scores mainly reflect ability to approach correct object
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{VLA Reaching Accuracy}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Evaluate offset between hand center and object in x-y plane
+        \item Position recorded when VLA event signal triggers switch
+        \item Compare:
+          \begin{itemize}
+            \item VLA with cam1 only
+            \item VLA with concatenated cam1+cam2
+          \end{itemize}
+        \item Results (Fig.~6):
+          \begin{itemize}
+            \item Combined cameras: typical offset $\leq$ 6 cm
+            \item For tape: mean offset reduced from 12 cm to 3 cm
+            \item Two cameras help compensate for depth ambiguity
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_6.png}
+      \captionof{figure}{x-y offset from target object for different camera setups (Fig.~6).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Diffusion Policy: Multi-Modal Grasping}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Objects: tape and blue block
+        \item Training includes:
+          \begin{itemize}
+            \item Slide \& pick trajectories
+            \item Direct pick trajectories
+            \item Equal number of each type
+          \end{itemize}
+        \item Test: vary distance from table edge
+        \item Results (Fig.~7):
+          \begin{itemize}
+            \item Closer to edge: higher probability of slide \& pick
+            \item Further from edge: higher probability of direct pick
+            \item All trials (5 per distance) succeed for both objects
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_7.png}
+      \captionof{figure}{Multi-modal grasp selection vs. distance to table edge (Fig.~7).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Diffusion Policy: Sensitivity to Initial Offset}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Test grasp success vs. initial hand-object offset
+        \item Offsets in x-y plane: 5, 10, 15 cm
+        \item Objects: pepper and tape
+        \item Results (Fig.~8):
+          \begin{itemize}
+            \item Success rate drops below 50\% when offset $>$ 15 cm
+            \item Indicates diffusion requires hand to start near object
+            \item VLA's typical 6 cm error lies within diffusion's tolerance
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_8.png}
+      \captionof{figure}{Grasp success vs. initial offset for diffusion policy (Fig.~8).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Diffusion Policy: Failure Recovery}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Demonstration on picking up paper
+        \item First attempt: incomplete grasp, object slips
+        \item Policy automatically re-attempts grasp
+        \item Event signal behavior (Fig.~9):
+          \begin{itemize}
+            \item Remains zero during failed attempt
+            \item Rises to 1 only when successful lift occurs
+          \end{itemize}
+        \item Joint trajectories show multiple grasp attempts
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_9.png}
+      \captionof{figure}{Diffusion policy recovering from failed grasp attempts (Fig.~9).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Combined VLA + Diffusion: Task Execution}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Full pipeline for pick-and-place (Fig.~10):
+          \begin{itemize}
+            \item VLA: approach object and plate
+            \item Diffusion: grasp and release
+            \item Event signal $\sigma$ drives switching
+          \end{itemize}
+        \item Trajectories:
+          \begin{itemize}
+            \item Vertical motion and $\sigma$ over time show clear phases
+            \item x-y trajectories show distinct VLA vs. diffusion segments
+          \end{itemize}
+        \item Color coding:
+          \begin{itemize}
+            \item Purple: VLA-controlled motion
+            \item Green: diffusion-controlled motion
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_10.png}
+      \captionof{figure}{Combined VLA-diffusion pipeline and success scores (Fig.~10).}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Combined VLA + Diffusion: Performance}
+  \small
+  \begin{itemize}
+    \item Success scores for all object-plate combinations:
+      \begin{itemize}
+        \item VLA + diffusion: $>$ 0.8 for all combinations
+        \item VLA-only (trained on pepper and tape only):
+          \begin{itemize}
+            \item Pepper: 0.43
+            \item Tape: 0.20
+          \end{itemize}
+      \end{itemize}
+    \item Hybrid approach:
+      \begin{itemize}
+        \item More than doubles success compared to VLA-only in many cases
+        \item Enables robust manipulation of more challenging objects (e.g., tape, paper)
+      \end{itemize}
+    \item Demonstrates effective integration of high-level and low-level controllers
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Conclusion}
+  \small
+  \begin{itemize}
+    \item Introduced a \textbf{hybrid VLA-diffusion framework} for dexterous manipulation
+    \item First demonstration (to authors' knowledge) of VLA control on a multi-fingered hand
+    \item Key contributions:
+      \begin{itemize}
+        \item Event-signal-based switching between VLA and diffusion policies
+        \item Use of concatenated multi-view images to improve VLA localization
+        \item Demonstration of multi-modal grasping and failure recovery via diffusion
+      \end{itemize}
+    \item Achieved $>$80\% success in language-conditioned pick-and-place
+      \begin{itemize}
+        \item Significant improvement over VLA-only baseline
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \frametitle{Limitations and Future Work}
+  \small
+  \begin{itemize}
+    \item \textbf{Limitations:}
+      \begin{itemize}
+        \item One diffusion policy per object (lookup table selection)
+        \item openVLA pre-trained only on 1 DoF pinch grippers
+        \item Limited object set and task diversity
+      \end{itemize}
+    \item \textbf{Future directions:}
+      \begin{itemize}
+        \item More generalized diffusion policies or use of large-scale datasets
+        \item VLA models trained on diverse multi-fingered hands
+        \item Incorporation of variable stiffness as a control input
+        \item Integration of tactile sensing for improved interaction control
+      \end{itemize}
+    \item Explore hardware-software co-design to further enhance robustness
+  \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+  \centering
+  \vfill
+  \Large Thank you for your attention!\\[0.5cm]
+  \normalsize Questions?
+  \vfill
+\end{frame}
+
+%------------------------------------------------
+\end{document}

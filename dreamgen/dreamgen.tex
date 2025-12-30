@@ -1,0 +1,603 @@
+\documentclass{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+
+\title[DREAMGEN]{DREAMGEN: Unlocking Generalization in Robot Learning through Video World Models}
+\author[Jang et al.]{Joel Jang, Seonghyeon Ye, Zongyu Lin, Jiannan Xiang, Johan Bjorck, Yu Fang,\\
+Fengyuan Hu, Spencer Huang, Kaushil Kundalia, Lin Yen-Chen, Loic Magne,\\
+Ajay Mandlekar, Avnish Narayan, You Liang Tan, Guanzhi Wang, Jing Wang,\\
+Qi Wang, Yinzhen Xu, Xiaohui Zeng, Kaiyuan Zheng, Ruijie Zheng, Ming-Yu Liu,\\
+Luke Zettlemoyer, Dieter Fox, Jan Kautz, Scott Reed, Yuke Zhu, Linxi Fan}
+\institute[NVIDIA et al.]{
+NVIDIA \and University of Washington \and KAIST \and UCLA \and UCSD \and CalTech \and NTU \and University of Maryland \and UT Austin}
+\date[arXiv 2025]{arXiv:2505.12705 [cs.RO], 2025}
+
+\begin{document}
+
+%---------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Citation}
+  \small
+  \begin{itemize}
+    \item Jang, J., Ye, S., Lin, Z., Xiang, J., Bjorck, J., Fang, Y., Hu, F., Huang, S., Kundalia, K., Yen-Chen, L., Magne, L., Mandlekar, A., Narayan, A., Tan, Y. L., Wang, G., Wang, J., Wang, Q., Xu, Y., Zeng, X., Zheng, K., Zheng, R., Liu, M.-Y., Zettlemoyer, L., Fox, D., Kautz, J., Reed, S., Zhu, Y., \& Fan, L. (2025).
+    \item \textbf{DREAMGEN: Unlocking Generalization in Robot Learning through Video World Models}.
+    \item arXiv preprint \textit{arXiv:2505.12705} [cs.RO], 17 Jun 2025.
+    \item URL: \url{https://research.nvidia.com/labs/gear/dreamgen}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Research Area and Background}
+  \small
+  \begin{itemize}
+    \item Robot foundation models trained on large-scale human teleoperation data for dexterous real-world tasks.
+    \item Current paradigm: imitation learning from manually collected demonstrations for each task and environment.
+    \item Synthetic data in simulation: scalable but suffers from sim2real gap and limited physical realism.
+    \item Recent advances in text-to-video and video world models (e.g., WAN2.1, Cosmos, Hunyuan, CogVideoX).
+    \item Growing interest in learning robot policies from unlabeled videos and latent actions.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Goal of the Research}
+  \small
+  \begin{itemize}
+    \item Develop a \textbf{simple, scalable pipeline} to generate realistic robot training data using video world models.
+    \item Enable \textbf{behavior generalization}: learn entirely new verbs and skills from synthetic videos only.
+    \item Enable \textbf{environment generalization}: transfer to novel environments using teleoperation data from a single setup.
+    \item Reduce dependence on manual teleoperation while maintaining or improving policy performance.
+    \item Provide a \textbf{benchmark} (DreamGen Bench) to evaluate video world models for robotics.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{State-of-the-Art and Limitations}
+  \small
+  \begin{itemize}
+    \item \textbf{Simulation-based synthetic data}
+      \begin{itemize}
+        \item Efficient but limited by sim2real gap and difficulty modeling liquids, deformables, articulated objects.
+        \item Often requires heavy manual engineering or TAMP-based systems.
+      \end{itemize}
+    \item \textbf{Image/video augmentation for robots}
+      \begin{itemize}
+        \item Uses in-painting, diffusion, video2video to diversify visuals.
+        \item Limited diversity in robot motions; mainly improves visual robustness.
+      \end{itemize}
+    \item \textbf{Video world models as planners}
+      \begin{itemize}
+        \item Prior work uses them at test-time for planning or high-level trajectory generation.
+        \item Not primarily used as large-scale \emph{data generators} for offline policy training.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Research Motivation}
+  \small
+  \begin{itemize}
+    \item Manual teleoperation for each new task and environment is costly and not scalable.
+    \item Video world models contain strong priors:
+      \begin{itemize}
+        \item Physical reasoning and naturalistic motion.
+        \item Language grounding and scene understanding.
+      \end{itemize}
+    \item If adapted to a target robot, they can generate \textbf{photorealistic, physically plausible} robot videos.
+    \item These videos lack actions; need a way to recover \textbf{pseudo-actions} to make them usable for policy learning.
+    \item Aim: treat video world models as \textbf{synthetic data generators} to unlock scalable robot learning.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Problem Definition}
+  \small
+  \begin{itemize}
+    \item Input:
+      \begin{itemize}
+        \item Limited human teleoperation trajectories for a given robot embodiment.
+        \item A pretrained text-to-video world model.
+      \end{itemize}
+    \item Desired output:
+      \begin{itemize}
+        \item Visuomotor policies that generalize to:
+          \begin{itemize}
+            \item New behaviors (novel verbs).
+            \item New environments (unseen scenes).
+          \end{itemize}
+      \end{itemize}
+    \item Constraints:
+      \begin{itemize}
+        \item Minimal additional teleoperation data.
+        \item Use only video world models and pseudo-action labeling for synthetic data.
+      \end{itemize}
+    \item Core problem: How to convert video-only generations into \textbf{neural trajectories} (video + actions) suitable for policy training.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{DREAMGEN Overview}
+  \small
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item 4-stage pipeline to create \textbf{neural trajectories}:
+          \begin{enumerate}
+            \item Fine-tune video world model on robot teleop data.
+            \item Roll out model with initial frames and language prompts.
+            \item Label pseudo-actions via IDM or latent action model.
+            \item Train visuomotor policies on neural trajectories.
+          \end{enumerate}
+        \item Designed to be general across robots, tasks, and environments.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_2.png}
+      
+      \vspace{0.2cm}
+      \footnotesize Figure 2: DREAMGEN pipeline: fine-tune, rollout, pseudo-action labeling, policy training.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Generalization Concept}
+  \small
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Figure on page 1 illustrates:
+          \begin{itemize}
+            \item Contact-rich data augmentation.
+            \item New behavior generalization.
+            \item New environment generalization.
+          \end{itemize}
+        \item Only teleoperation data: single pick-and-place task in one environment.
+        \item DREAMGEN enables:
+          \begin{itemize}
+            \item 22 new behaviors on GR1 humanoid.
+            \item Transfer to 10 unseen environments.
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_1.png}
+      
+      \vspace{0.2cm}
+      \footnotesize Figure 1: Generalization through DREAMGEN using synthetic videos.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Step 1: Video World Model Fine-tuning}
+  \small
+  \begin{itemize}
+    \item Base models: primarily WAN2.1; also Hunyuan, CogVideoX, Cosmos for benchmarking.
+    \item Fine-tune on human-teleoperated robot trajectories for target embodiment.
+    \item Use LoRA to preserve internet-scale prior knowledge and avoid catastrophic forgetting.
+    \item For multi-view datasets (RoboCasa, DROID):
+      \begin{itemize}
+        \item Concatenate views into a 2$\times$2 grid (left, right, wrist, black).
+      \end{itemize}
+    \item Evaluate fine-tuning quality via:
+      \begin{itemize}
+        \item Instruction following.
+        \item Physics following (see DreamGen Bench).
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Step 2: Video World Model Rollout}
+  \small
+  \begin{itemize}
+    \item Generate synthetic robot videos conditioned on:
+      \begin{itemize}
+        \item Initial frame $o_1$.
+        \item Language instruction $i$.
+      \end{itemize}
+    \item Simulation:
+      \begin{itemize}
+        \item Sample new initial frames by randomizing object locations and environments.
+      \end{itemize}
+    \item Real world:
+      \begin{itemize}
+        \item Manually capture initial frames with randomized object positions.
+        \item For environment generalization: capture frames from 10 new environments.
+      \end{itemize}
+    \item For behavior generalization:
+      \begin{itemize}
+        \item Manually design novel behavior prompts (new verbs).
+        \item Include prompts from DreamGen Bench.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Step 3: Pseudo-Action Labeling}
+  \small
+  \begin{itemize}
+    \item Two approaches:
+      \begin{itemize}
+        \item \textbf{Inverse Dynamics Model (IDM)} actions.
+        \item \textbf{Latent actions} via LAPA.
+      \end{itemize}
+    \item IDM:
+      \begin{itemize}
+        \item Diffusion transformer with SigLIP-2 vision encoder.
+        \item Conditioned on two frames; predicts action chunks between them.
+        \item Trained with flow-matching objective on same data as video model.
+        \item Sliding window over video to produce sequence $ \hat{a}_t : \hat{a}_{t+H}$.
+      \end{itemize}
+    \item Latent actions (LAPA):
+      \begin{itemize}
+        \item Transformer encoder-decoder with VQ-VAE objective.
+        \item Condition on current and future frame (1s ahead).
+        \item Use pre-quantized continuous embedding as latent action.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Pseudo-Action Architectures}
+  \small
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\columnwidth,keepaspectratio]{extracted/figure_3a.png}
+      
+      \footnotesize (a) Inverse Dynamics Model (IDM).
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\columnwidth,keepaspectratio]{extracted/figure_3b.png}
+      
+      \footnotesize (b) LAPA latent action model.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Step 4: Policy Training on Neural Trajectories}
+  \small
+  \begin{itemize}
+    \item Neural trajectory: sequence of images and pseudo-actions:
+      \[
+        (o_t, i_t, \hat{a}_t : \hat{a}_{t+H})
+      \]
+    \item Policies condition on:
+      \begin{itemize}
+        \item Image observation $o_t$.
+        \item Language instruction $i_t$.
+        \item State inputs are set to zero (no state in neural trajectories).
+      \end{itemize}
+    \item Target: predict pseudo-actions $\hat{a}_{t:t+H}$ (IDM or latent).
+    \item Policy architectures:
+      \begin{itemize}
+        \item Diffusion Policy.
+        \item $\pi_0$.
+        \item GR00T N1.
+      \end{itemize}
+    \item Training regimes:
+      \begin{itemize}
+        \item Co-training with real trajectories (1:1 sampling).
+        \item Training solely on neural trajectories (IDM actions).
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Experimental Design}
+  \small
+  \begin{itemize}
+    \item \textbf{Three main applications}:
+      \begin{itemize}
+        \item Training data augmentation for existing tasks.
+        \item Behavior generalization to novel verbs.
+        \item Environment generalization to novel scenes.
+      \end{itemize}
+    \item \textbf{Embodiments}:
+      \begin{itemize}
+        \item Fourier GR1 humanoid.
+        \item Franka Emika Panda.
+        \item SO-100 low-cost arm.
+      \end{itemize}
+    \item \textbf{Policy backbones}: Diffusion Policy, $\pi_0$, GR00T N1.
+    \item \textbf{Evaluation}: success rate with task-specific partial credit schemes, 10 rollouts per checkpoint.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Datasets Used}
+  \small
+  \begin{itemize}
+    \item \textbf{RoboCasa} (simulation)
+      \begin{itemize}
+        \item 24 kitchen manipulation tasks with multi-view observations.
+        \item 1{,}200 human demonstrations for video model training.
+      \end{itemize}
+    \item \textbf{GR1 teleoperation}
+      \begin{itemize}
+        \item 2{,}884 pick-and-place trajectories in a single lab environment.
+        \item Additional 100 trajectories per dexterous task (hammering, wiping, folding, stacking).
+      \end{itemize}
+    \item \textbf{DROID} (Franka)
+      \begin{itemize}
+        \item 49{,}895 trajectories for video model and IDM training.
+        \item 100 teleop trajectories per real-world Franka task.
+      \end{itemize}
+    \item \textbf{SO-100} (LeRobot)
+      \begin{itemize}
+        \item Trimmed and split teleop videos into individual trajectories.
+        \item 10 and 13 videos for two tasks, expanded into 68 and 44 trajectories.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Scaling Neural Trajectories in RoboCasa}
+  \small
+  \begin{columns}
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item Vary number of neural trajectories up to 240k (333$\times$ original demos).
+        \item Three ground-truth data regimes:
+          \begin{itemize}
+            \item Low (720), mid (2.4k), high (7.2k) trajectories.
+          \end{itemize}
+        \item Co-training with neural trajectories improves success across all regimes.
+        \item Log-linear relationship between \#neural trajectories and performance.
+        \item Training only on neural trajectories (IDM) achieves 20.6\% average success (24 tasks).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_4.png}
+      
+      \vspace{0.2cm}
+      \footnotesize Figure 4: RoboCasa success vs. number of neural trajectories (LAPA and IDM).
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Real-World Data Augmentation Results}
+  \small
+  \begin{columns}
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item GR1 humanoid: 4 tasks (hammering, wiping, folding, stacking).
+        \item Franka: 3 tasks (pick-and-place, cube stacking, tool usage).
+        \item SO-100: 2 tasks (strawberry picking, tic-tac-toe).
+        \item Low-data regime:
+          \begin{itemize}
+            \item 10 trajectories per task (25 for GR1 folding).
+            \item 10 and 13 trajectories for SO-100 tasks.
+          \end{itemize}
+        \item Co-training with neural trajectories (1:1) consistently improves success for all policies and robots.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/figure_5.png}
+      
+      \vspace{0.2cm}
+      \footnotesize Figure 5: Real-world evaluation with and without neural trajectories.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Behavior and Environment Generalization Setup}
+  \small
+  \begin{itemize}
+    \item Train video world model on:
+      \begin{itemize}
+        \item 2{,}884 GR1 pick-and-place trajectories in a single environment.
+      \end{itemize}
+    \item Behavior generalization:
+      \begin{itemize}
+        \item 14 novel behavior tasks in seen environment (e.g., pouring, opening doors, using tools).
+        \item 50 neural trajectories per task; no additional teleoperation.
+      \end{itemize}
+    \item Environment generalization:
+      \begin{itemize}
+        \item 10 novel environments with new initial frames.
+        \item Both seen behaviors (pick-and-place variants) and novel behaviors.
+      \end{itemize}
+    \item Base policy: GR00T N1 trained on pick-and-place only vs. GR00T N1 with DREAMGEN.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Generalization Results: Behaviors and Environments}
+  \small
+  \begin{itemize}
+    \item \textbf{Seen environments, novel behaviors} (14 tasks):
+      \begin{itemize}
+        \item GR00T N1 baseline: 11.2\% average success.
+        \item With DREAMGEN: 43.2\% average success.
+      \end{itemize}
+    \item \textbf{Novel environments, seen behaviors} (6 tasks):
+      \begin{itemize}
+        \item Baseline: 0.0\% average success.
+        \item With DREAMGEN: non-trivial success (e.g., 30--45\% on several tasks).
+      \end{itemize}
+    \item \textbf{Novel environments, novel behaviors} (7 tasks):
+      \begin{itemize}
+        \item Baseline: 0.0\% average success.
+        \item With DREAMGEN: 28.5\% average success.
+      \end{itemize}
+    \item Demonstrates zero-to-one improvements from pick-and-place-only teleoperation data.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Table: Generalization Success Rates}
+  \small
+  \begin{center}
+    \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/table_1.png}
+    
+    \vspace{0.2cm}
+    \footnotesize Table 1: Success rates across new behaviors and environments for GR1 humanoid.
+  \end{center}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{DreamGen Bench: Benchmark Design}
+  \small
+  \begin{itemize}
+    \item Goal: evaluate video world models for robotics along:
+      \begin{itemize}
+        \item \textbf{Instruction Following} (IF).
+        \item \textbf{Physics Alignment} (PA).
+      \end{itemize}
+    \item Datasets:
+      \begin{itemize}
+        \item RoboCasa (Franka, simulation).
+        \item GR1 humanoid (real).
+      \end{itemize}
+    \item Metrics:
+      \begin{itemize}
+        \item IF: binary scores from Qwen2.5-VL (and GPT-4o) on instruction adherence.
+        \item PA: scores from VideoCon-Physics and Qwen2.5-VL on physical plausibility.
+      \end{itemize}
+    \item Human evaluation used to validate automatic metrics (high Pearson correlation $>$ 0.9).
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{DreamGen Bench: Model Comparison}
+  \small
+  \begin{itemize}
+    \item Evaluated models:
+      \begin{itemize}
+        \item Hunyuan, CogVideoX, WAN2.1, Cosmos.
+        \item Zero-shot and fine-tuned variants.
+      \end{itemize}
+    \item Fine-tuned models substantially outperform zero-shot on both IF and PA.
+    \item Cosmos-sft and WAN2.1-sft achieve highest combined scores across datasets.
+    \item Benchmark provides a low-cost proxy for downstream policy performance.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Table: DreamGen Bench Statistics and Results}
+  \small
+  \begin{center}
+    \includegraphics[width=0.7\textwidth,keepaspectratio]{extracted/table_2.png}
+    
+    \vspace{0.2cm}
+    \footnotesize Table 2: Instruction following and physics alignment scores for different video models.
+  \end{center}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Correlation with Downstream Performance}
+  \small
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Train RoboCasa policies using only neural trajectories from each video model.
+        \item Compute DreamGen Bench score as average of IF (GPT) and PA.
+        \item Plot RoboCasa success vs. DreamGen Bench score.
+        \item Observe positive correlation:
+          \begin{itemize}
+            \item Better world models (higher IF/PA) yield better robot policies.
+          \end{itemize}
+        \item Supports using DreamGen Bench as a proxy for model selection.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \includegraphics[width=0.6\textwidth,keepaspectratio]{extracted/figure_6.png}
+      
+      \vspace{0.2cm}
+      \footnotesize Figure 6: Correlation between DreamGen Bench and RoboCasa performance.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Conclusion}
+  \small
+  \begin{itemize}
+    \item DREAMGEN: a 4-stage pipeline turning video world models into scalable synthetic data generators.
+    \item Neural trajectories (videos + pseudo-actions) enable:
+      \begin{itemize}
+        \item Strong data augmentation in simulation and real world.
+        \item Behavior generalization to 22 new skills on GR1.
+        \item Environment generalization from a single teleop environment to 10 new ones.
+      \end{itemize}
+    \item DreamGen Bench links video model quality (IF, PA) to downstream robot performance.
+    \item Establishes a promising direction for scaling robot learning beyond manual data collection.
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \frametitle{Limitations and Future Work}
+  \small
+  \begin{itemize}
+    \item Tasks are relatively simple; do not cover full dexterous capabilities of robots.
+    \item Significant compute cost:
+      \begin{itemize}
+        \item 240k RoboCasa samples took 54 hours on 1500 NVIDIA L40 GPUs.
+      \end{itemize}
+    \item Requires manual selection of initial frames; automation is future work.
+    \item Automatic evaluators (VideoCon-Physics, VLMs) can hallucinate on physical realism.
+    \item Future directions:
+      \begin{itemize}
+        \item More diverse behaviors and video-language pairings.
+        \item Richer control for complex dexterous tasks.
+        \item More efficient video world models and evaluation methods.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%---------------------------------------
+\begin{frame}
+  \centering
+  \Large Thank You!\\[0.5cm]
+  \normalsize Questions?
+\end{frame}
+
+\end{document}

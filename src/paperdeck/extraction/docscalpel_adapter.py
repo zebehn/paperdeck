@@ -187,8 +187,9 @@ class DocScalpelAdapter:
             element_types=docscalpel_types,
             output_directory=str(self.config.output_directory) if self.config else ".",
             confidence_threshold=self.config.confidence_threshold if self.config else 0.5,
-            naming_pattern="{type}_{counter}.png",  # Match our naming convention
+            naming_pattern="{type}_{counter:02d}.pdf",  # PDF format with zero-padded numbering
             overwrite_existing=True,
+            max_pages=getattr(self.config, 'max_pages', None) if self.config else None,
         )
 
         return config

@@ -5,13 +5,12 @@ This module provides an adapter pattern for integrating DocScalpel library
 to extract figures and tables from PDF papers.
 """
 
-from pathlib import Path
-from typing import List, Optional
 import logging
 import time
+from pathlib import Path
 
-from ..core.models import ExtractedElement, ElementType
 from ..core.config import ExtractionConfiguration
+from ..core.models import ElementType, ExtractedElement
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ class DocScalpelAdapter:
         >>> print(f"Found {len(elements)} figures")
     """
 
-    def __init__(self, config: Optional[ExtractionConfiguration] = None):
+    def __init__(self, config: ExtractionConfiguration | None = None):
         """Initialize DocScalpel adapter with optional configuration.
 
         Attempts to import the DocScalpel library. If import fails, logs a warning
@@ -76,8 +75,8 @@ class DocScalpelAdapter:
     def extract(
         self,
         pdf_path: Path,
-        element_types: Optional[List[ElementType]] = None,
-    ) -> List[ExtractedElement]:
+        element_types: list[ElementType] | None = None,
+    ) -> list[ExtractedElement]:
         """Extract figures and/or tables from a PDF using DocScalpel.
 
         This method orchestrates the extraction process, respecting configuration flags
@@ -175,7 +174,7 @@ class DocScalpelAdapter:
             )
             return []
 
-    def _create_docscalpel_config(self, element_types: List[ElementType]):
+    def _create_docscalpel_config(self, element_types: list[ElementType]):
         """Create DocScalpel ExtractionConfig from PaperDeck element types.
 
         Args:
@@ -255,7 +254,7 @@ class DocScalpelAdapter:
                 f"for {pdf_path.name}"
             )
 
-    def _convert_elements(self, docscalpel_elements: List) -> List[ExtractedElement]:
+    def _convert_elements(self, docscalpel_elements: list) -> list[ExtractedElement]:
         """Convert DocScalpel Element objects to PaperDeck ExtractedElement objects.
 
         Args:
@@ -264,8 +263,9 @@ class DocScalpelAdapter:
         Returns:
             List of PaperDeck ExtractedElement objects (FigureElement, TableElement, etc.)
         """
-        from ..core.models import FigureElement, TableElement, EquationElement, BoundingBox
         from uuid import uuid4
+
+        from ..core.models import BoundingBox, EquationElement, FigureElement, TableElement
 
         converted = []
 

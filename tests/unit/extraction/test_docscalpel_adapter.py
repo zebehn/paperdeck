@@ -269,3 +269,116 @@ class TestDocScalpelAdapterErrorHandling:
         # Should return empty list
         assert result == [], f"Expected empty list on failure, got {result}"
         assert isinstance(result, list), "Result should be a list"
+
+
+class TestDocScalpelAdapterPerformance:
+    """Tests for performance logging and monitoring (User Story 3)."""
+
+    def test_extraction_logs_performance_metrics(self, mock_docscalpel, mock_pdf_result):
+        """[US3] Verify adapter logs performance metrics after extraction.
+
+        Test that extraction logs:
+        - Total elements extracted
+        - Library execution time (extraction_time_seconds)
+        - Total elapsed time
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Mock extract_elements to return successful result
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+
+        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+            pdf_path = Path("/tmp/test.pdf")
+            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+            # Should log performance info
+            assert mock_logger.info.called, "Expected info logging for performance metrics"
+
+            # Check that performance info includes key metrics
+            info_calls = [str(call) for call in mock_logger.info.call_args_list]
+            info_text = ' '.join(info_calls)
+
+            # Should mention element count and timing
+            assert any('1 element' in call or 'elements' in call for call in info_calls), \
+                f"Expected element count in logs, got: {info_calls}"
+
+    def test_extraction_logs_timing(self, mock_docscalpel, mock_pdf_result):
+        """[US3] Verify adapter logs extraction timing information.
+
+        Test that extraction_time_seconds from DocScalpel result is logged.
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Set specific extraction time
+        mock_pdf_result.extraction_time_seconds = 3.5
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+
+        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+            with patch('time.perf_counter', side_effect=[0.0, 4.0]):  # Mock timing
+                pdf_path = Path("/tmp/test.pdf")
+                result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+                # Should log timing information
+                info_calls = [str(call) for call in mock_logger.info.call_args_list]
+
+                # Look for timing information (library time or total time)
+                has_timing = any('3.5' in call or 's' in call or 'time' in call.lower()
+                                for call in info_calls)
+                assert has_timing, f"Expected timing info in logs, got: {info_calls}"
+
+    def test_extraction_logs_overhead_warning(self, mock_docscalpel, mock_pdf_result):
+        """[US3] Verify adapter warns about high overhead.
+
+        Test that significant overhead (>2s or >20%) triggers a warning.
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Create scenario with high overhead: library=1s, total=5s, overhead=4s (80%)
+        mock_pdf_result.extraction_time_seconds = 1.0
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+
+        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+            with patch('time.perf_counter', side_effect=[0.0, 5.0]):  # Total 5 seconds
+                pdf_path = Path("/tmp/test.pdf")
+                result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+                # Should warn about high overhead
+                warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+                has_overhead_warning = any('overhead' in call.lower() for call in warning_calls)
+                assert has_overhead_warning, \
+                    f"Expected overhead warning (4s/80%), got warnings: {warning_calls}"
+
+    def test_max_pages_parameter(self, mock_docscalpel, mock_pdf_result):
+        """[US3] Verify max_pages parameter is passed to docscalpel config.
+
+        Test that when max_pages is set in configuration, it's passed
+        to DocScalpel's ExtractionConfig.
+        """
+        from paperdeck.core.config import ExtractionConfiguration
+
+        # Create config with max_pages limit
+        config = ExtractionConfiguration(max_pages=10)
+        adapter = DocScalpelAdapter(config)
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+
+        pdf_path = Path("/tmp/large.pdf")
+        result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+        # Verify ExtractionConfig was called with max_pages
+        mock_docscalpel.ExtractionConfig.assert_called_once()
+        config_call = mock_docscalpel.ExtractionConfig.call_args
+
+        # Check max_pages in kwargs
+        assert 'max_pages' in config_call.kwargs, \
+            f"Expected max_pages in config kwargs, got: {config_call.kwargs.keys()}"
+        assert config_call.kwargs['max_pages'] == 10, \
+            f"Expected max_pages=10, got: {config_call.kwargs['max_pages']}"

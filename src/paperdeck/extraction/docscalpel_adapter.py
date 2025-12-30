@@ -8,6 +8,7 @@ to extract figures and tables from PDF papers.
 from pathlib import Path
 from typing import List, Optional
 import logging
+import time
 
 from ..core.models import ExtractedElement, ElementType
 from ..core.config import ExtractionConfiguration
@@ -134,6 +135,8 @@ class DocScalpelAdapter:
             return []
 
         # Use DocScalpel to extract all elements at once
+        start_time = time.perf_counter()
+
         try:
             # Create DocScalpel configuration
             docscalpel_config = self._create_docscalpel_config(element_types)
@@ -141,6 +144,9 @@ class DocScalpelAdapter:
             # Extract elements using DocScalpel
             logger.info(f"Extracting elements from {pdf_path.name} using DocScalpel...")
             result = self.docscalpel.extract_elements(str(pdf_path), docscalpel_config)
+
+            # Calculate total elapsed time
+            elapsed = time.perf_counter() - start_time
 
             # Check success flag and handle errors
             if not result.success:
@@ -155,15 +161,18 @@ class DocScalpelAdapter:
             # Convert DocScalpel elements to PaperDeck elements
             extracted = self._convert_elements(result.elements)
 
-            logger.info(
-                f"Successfully extracted {len(extracted)} element(s) from {pdf_path.name} "
-                f"({result.figure_count} figures, {result.table_count} tables)"
-            )
+            # Log performance metrics
+            self._log_performance(pdf_path, result, elapsed)
 
             return extracted
 
         except Exception as e:
-            logger.error(f"Error during DocScalpel extraction: {e}", exc_info=True)
+            elapsed = time.perf_counter() - start_time
+            logger.error(
+                f"Unexpected extraction error for {pdf_path.name} "
+                f"(after {elapsed:.2f}s): {e}",
+                exc_info=True
+            )
             return []
 
     def _create_docscalpel_config(self, element_types: List[ElementType]):
@@ -220,6 +229,31 @@ class DocScalpelAdapter:
 
         for i, warning in enumerate(warnings, 1):
             logger.warning(f"  Warning [{i}/{len(warnings)}]: {warning}")
+
+    def _log_performance(self, pdf_path: Path, result, total_elapsed: float) -> None:
+        """Log extraction performance metrics and detect overhead.
+
+        Args:
+            pdf_path: Path to the PDF being processed
+            result: DocScalpel ExtractionResult with timing information
+            total_elapsed: Total elapsed time including adapter overhead
+        """
+        lib_time = result.extraction_time_seconds
+        overhead = total_elapsed - lib_time
+        overhead_pct = (overhead / total_elapsed * 100) if total_elapsed > 0 else 0
+
+        logger.info(
+            f"Extraction completed for {pdf_path.name}: "
+            f"{result.total_elements} element(s) in {lib_time:.2f}s "
+            f"(total: {total_elapsed:.2f}s, overhead: {overhead:.2f}s / {overhead_pct:.1f}%)"
+        )
+
+        # Warn if overhead is significant
+        if overhead > 2.0 or overhead_pct > 20:
+            logger.warning(
+                f"High adapter overhead detected: {overhead:.2f}s ({overhead_pct:.1f}%) "
+                f"for {pdf_path.name}"
+            )
 
     def _convert_elements(self, docscalpel_elements: List) -> List[ExtractedElement]:
         """Convert DocScalpel Element objects to PaperDeck ExtractedElement objects.

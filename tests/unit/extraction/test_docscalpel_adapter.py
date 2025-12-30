@@ -156,3 +156,116 @@ class TestDocScalpelAdapterPDFOutput:
         for elem in result:
             assert elem.output_filename.suffix == ".pdf", \
                 f"Expected .pdf suffix, got {elem.output_filename.suffix}"
+
+
+class TestDocScalpelAdapterErrorHandling:
+    """Tests for error handling and logging (User Story 2)."""
+
+    def test_extraction_failure_logs_errors_individually(self, mock_docscalpel, mock_pdf_result_with_errors):
+        """[US2] Verify adapter logs each error individually with enumeration.
+
+        Test that when extraction fails (success=False), each error message
+        in result.errors is logged individually with [i/total] format.
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Mock extract_elements to return failure result
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result_with_errors
+
+        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+            pdf_path = Path("/tmp/corrupted.pdf")
+            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+            # Should return empty list on failure
+            assert result == []
+
+            # Verify ERROR level logging was called
+            assert mock_logger.error.called, "Expected error logging for extraction failure"
+
+            # Verify each error logged with enumeration
+            error_calls = [call for call in mock_logger.error.call_args_list]
+            assert len(error_calls) >= 3, f"Expected at least 3 error log calls, got {len(error_calls)}"
+
+            # Check that errors contain enumeration pattern [i/total]
+            error_messages = [str(call) for call in error_calls]
+            has_enumeration = any('[1/' in msg or '[2/' in msg or '[3/' in msg for msg in error_messages)
+            assert has_enumeration, f"Expected error enumeration [i/total] in logs, got: {error_messages}"
+
+    def test_extraction_warnings_logged(self, mock_docscalpel, mock_pdf_result_with_warnings):
+        """[US2] Verify adapter logs warnings individually.
+
+        Test that warnings are logged individually even when extraction succeeds.
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Mock extract_elements to return result with warnings
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result_with_warnings
+
+        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+            pdf_path = Path("/tmp/test.pdf")
+            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+            # Should return elements despite warnings
+            assert len(result) > 0, "Expected elements even with warnings"
+
+            # Verify WARNING level logging was called
+            assert mock_logger.warning.called, "Expected warning logging"
+
+            # Verify individual warnings logged
+            warning_calls = [call for call in mock_logger.warning.call_args_list]
+            assert len(warning_calls) >= 2, f"Expected at least 2 warning log calls, got {len(warning_calls)}"
+
+    def test_extraction_checks_success_flag(self, mock_docscalpel, mock_pdf_result_with_errors):
+        """[US2] Verify adapter checks result.success before processing elements.
+
+        Test that the adapter respects the success flag and doesn't process
+        elements when success=False, even if elements list is present.
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Create result with success=False but non-empty elements (shouldn't happen, but test it)
+        mock_result = Mock()
+        mock_result.success = False
+        mock_result.elements = [Mock()]  # Has elements but failed
+        mock_result.errors = ["Test error"]
+        mock_result.warnings = []
+        mock_result.extraction_time_seconds = 0.5
+
+        mock_docscalpel.extract_elements.return_value = mock_result
+
+        pdf_path = Path("/tmp/test.pdf")
+        result = adapter.extract(pdf_path, [ElementType.FIGURE])
+
+        # Must return empty list when success=False, regardless of elements
+        assert result == [], f"Expected empty list when success=False, got {len(result)} elements"
+
+    def test_graceful_degradation_returns_empty_list(self, mock_docscalpel, mock_pdf_result_with_errors):
+        """[US2] Verify graceful degradation returns empty list on failure.
+
+        Test that extraction failures don't raise exceptions but return
+        empty list, allowing the application to continue with text-only slides.
+        """
+        adapter = DocScalpelAdapter()
+        adapter.docscalpel_available = True
+        adapter.docscalpel = mock_docscalpel
+
+        # Mock extract_elements to return failure
+        mock_docscalpel.extract_elements.return_value = mock_pdf_result_with_errors
+
+        pdf_path = Path("/tmp/corrupted.pdf")
+
+        # Should not raise exception
+        try:
+            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        except Exception as e:
+            pytest.fail(f"Extract should not raise exception, got: {e}")
+
+        # Should return empty list
+        assert result == [], f"Expected empty list on failure, got {result}"
+        assert isinstance(result, list), "Result should be a list"

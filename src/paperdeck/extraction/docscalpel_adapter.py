@@ -142,12 +142,15 @@ class DocScalpelAdapter:
             logger.info(f"Extracting elements from {pdf_path.name} using DocScalpel...")
             result = self.docscalpel.extract_elements(str(pdf_path), docscalpel_config)
 
+            # Check success flag and handle errors
             if not result.success:
-                logger.warning(f"DocScalpel extraction completed with errors: {result.errors}")
+                logger.error(f"DocScalpel extraction failed for {pdf_path.name}")
+                self._log_errors(result.errors)
+                return []
 
+            # Log warnings if present (even on success)
             if result.warnings:
-                for warning in result.warnings:
-                    logger.warning(f"DocScalpel warning: {warning}")
+                self._log_warnings(result.warnings)
 
             # Convert DocScalpel elements to PaperDeck elements
             extracted = self._convert_elements(result.elements)
@@ -193,6 +196,30 @@ class DocScalpelAdapter:
         )
 
         return config
+
+    def _log_errors(self, errors: list) -> None:
+        """Log each error individually with enumeration.
+
+        Args:
+            errors: List of error messages from DocScalpel extraction
+        """
+        if not errors:
+            return
+
+        for i, error in enumerate(errors, 1):
+            logger.error(f"  Error [{i}/{len(errors)}]: {error}")
+
+    def _log_warnings(self, warnings: list) -> None:
+        """Log each warning individually with enumeration.
+
+        Args:
+            warnings: List of warning messages from DocScalpel extraction
+        """
+        if not warnings:
+            return
+
+        for i, warning in enumerate(warnings, 1):
+            logger.warning(f"  Warning [{i}/{len(warnings)}]: {warning}")
 
     def _convert_elements(self, docscalpel_elements: List) -> List[ExtractedElement]:
         """Convert DocScalpel Element objects to PaperDeck ExtractedElement objects.

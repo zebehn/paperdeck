@@ -71,7 +71,7 @@ To generate the presentation:
      \begin{{frame}}
        \frametitle{{Benchmark Results (Table 2)}}
        \begin{{columns}}
-         \begin{{column}}{{0.45\textwidth}}
+         \begin{{column}}{{0.45\\textwidth}}
            \small
            \begin{{itemize}}
              \item Our method achieves best results on 4/5 datasets
@@ -81,7 +81,7 @@ To generate the presentation:
              \item Demonstrates broad applicability across domains
            \end{{itemize}}
          \end{{column}}
-         \begin{{column}}{{0.55\textwidth}}
+         \begin{{column}}{{0.55\\textwidth}}
            \includegraphics[width=\textwidth, keepaspectratio]{{extracted/table_02.pdf}}
          \end{{column}}
        \end{{columns}}
@@ -119,7 +119,7 @@ To generate the presentation:
         \begin{{frame}}
           \frametitle{{Results: Performance Comparison (Figure 3)}}
           \begin{{columns}}
-            \begin{{column}}{{0.5\textwidth}}
+            \begin{{column}}{{0.5\\textwidth}}
               \begin{{itemize}}
                 \item Our method achieves 15\% improvement over baseline
                 \item Performance gain consistent across all datasets
@@ -127,7 +127,7 @@ To generate the presentation:
                 \item Computational cost remains comparable to baseline
               \end{{itemize}}
             \end{{column}}
-            \begin{{column}}{{0.5\textwidth}}
+            \begin{{column}}{{0.5\\textwidth}}
               \includegraphics[width=0.9\columnwidth, keepaspectratio]{{extracted/figure_03.pdf}}
             \end{{column}}
           \end{{columns}}
@@ -239,7 +239,7 @@ To generate the presentation:
      * Example: `\includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_01.pdf}}`
    - **Tables**: Prevent tables from overflowing:
      * Add `\small` or `\footnotesize` before wide tables
-     * For very wide tables, use: `\resizebox{{0.9\textwidth}}{{!}}{{...table...}}`
+     * For very wide tables, use: `\resizebox{{0.9\\textwidth}}{{!}}{...table content...}`
      * Split tables across multiple slides if too large
    - **Text Content**:
      * Limit to 5-6 bullet points per slide maximum
@@ -283,14 +283,14 @@ To generate the presentation:
      **✅ CORRECT LaTeX syntax:**
      ```
      ✅ \end{{column}}           (Backslash + end + curly braces)
-     ✅ \begin{{column}}{{0.5\textwidth}}
+     ✅ \begin{{column}}{{0.5\\textwidth}}
      ✅ \end{{frame}}
      ✅ \end{{itemize}}
      ```
 
      **Before outputting, search your entire code for:**
      - Any `<` or `>` characters (except in comments or text)
-     - Any `</end{{...}}>` patterns
+     - Any `</end{...}>` patterns (HTML syntax)
      - Any closing tags that don't start with backslash `\`
    - Use the Beamer document class: \documentclass{{beamer}}.
    - Include necessary packages: \usepackage{{graphicx}} for images, \usepackage{{amsmath}} for math, \usepackage{{biblatex}} if needed for citations (but keep bibliography simple).
@@ -315,21 +315,21 @@ To generate the presentation:
 
 5. **LaTeX Structure Best Practices (CRITICAL - Prevent Compilation Errors):**
 
-   **EVERY \begin{{...}} MUST have a matching \end{{...}} tag!**
+   **EVERY \begin{...} MUST have a matching \end{...} tag!**
 
    **✓ CORRECT Example - Two-Column Layout:**
    ```latex
    \begin{{frame}}
      \frametitle{{My Slide Title}}
      \begin{{columns}}
-       \begin{{column}}{{0.5\textwidth}}
+       \begin{{column}}{{0.5\\textwidth}}
          Content for left column
          \begin{{itemize}}
            \item Point one
            \item Point two
          \end{{itemize}}
        \end{{column}}
-       \begin{{column}}{{0.5\textwidth}}
+       \begin{{column}}{{0.5\\textwidth}}
          \includegraphics[width=0.9\columnwidth, keepaspectratio]{{extracted/figure_01.pdf}}
        \end{{column}}
      \end{{columns}}
@@ -341,10 +341,10 @@ To generate the presentation:
    % ERROR 1: Missing \end{{column}}
    \begin{{frame}}
      \begin{{columns}}
-       \begin{{column}}{{0.5\textwidth}}
+       \begin{{column}}{{0.5\\textwidth}}
          Content here
        % MISSING: \end{{column}} before next begin!
-       \begin{{column}}{{0.5\textwidth}}
+       \begin{{column}}{{0.5\\textwidth}}
          More content
        \end{{column}}
      \end{{columns}}
@@ -388,8 +388,8 @@ To generate the presentation:
    12. **CRITICAL**: Search for `\scriptsize` before `\begin{{itemize}}` - if found, change to `\small` or remove!
    13. **CRITICAL**: Check for content-heavy frames - have you split overflowing content into multiple slides?
    14. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
-   15. **CRITICAL - SYNTAX VALIDATION**: Search for `</end{{` patterns - these are HTML syntax and WRONG!
-   16. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{{column}}>`)
+   15. **CRITICAL - SYNTAX VALIDATION**: Search for HTML closing tags like `</end{...}>` - these are WRONG!
+   16. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{column}>`)
    17. **CRITICAL - SYNTAX VALIDATION**: Check that every `\end{{column}}` appears BEFORE the next `\begin{{column}}` in two-column layouts
 
    **If any count doesn't match, tables are missing, or HTML syntax found, FIX IT before generating output!**
@@ -406,7 +406,7 @@ To generate the presentation:
 3. Discussion bullets must be factual content from the paper, not invented interpretations
 4. **NEVER use `\scriptsize` before `\begin{{itemize}}`** - use `\small` or no size modifier
 5. **Split overflowing content into multiple slides** - never force too much content into one slide
-6. **LATEX SYNTAX ONLY**: Use `\end{{column}}` NOT `</end{{column}}>` - no HTML/XML syntax!
+6. **LATEX SYNTAX ONLY**: Use `\end{{column}}` NOT `</end{column}>` - no HTML/XML syntax!
 7. **VERIFY TAG BALANCE**: Count all begin/end pairs - they MUST match exactly (same number of each)
 
 Now, using the provided research paper PDF and extracted image files, generate the LaTeX presentation code following all the guidelines above.

@@ -178,8 +178,8 @@ To generate the presentation:
    5. For each \begin{{column}}, is there an \end{{column}} before the next \begin{{column}}?
    6. Is every frame properly closed with \end{{frame}} before starting a new frame?
    7. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
-   8. **CRITICAL - SYNTAX VALIDATION**: Search for `</end{{` patterns - these are HTML syntax and WRONG!
-   9. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{{column}}>`)
+   8. **CRITICAL - SYNTAX VALIDATION**: Search for HTML closing tags like `</end{...}>` - these are HTML syntax and WRONG!
+   9. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{column}>`)
    10. **CRITICAL - SYNTAX VALIDATION**: Check that every `\end{{column}}` appears BEFORE the next `\begin{{column}}` in two-column layouts
 
    **If any count doesn't match or HTML syntax found, FIX IT before generating output!**

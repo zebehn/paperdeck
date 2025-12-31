@@ -92,8 +92,11 @@ class LaTeXValidator:
         # Check for duplicate blocks
         duplicate_errors = self._check_duplicates(lines)
 
+        # Check for HTML/XML syntax (CRITICAL - prevents compilation failures)
+        html_syntax_errors = self._check_html_syntax(lines)
+
         # Combine all errors
-        all_errors = matching_errors + duplicate_errors
+        all_errors = matching_errors + duplicate_errors + html_syntax_errors
 
         # Sort errors by line number
         all_errors.sort(key=lambda e: e.line_number)
@@ -185,5 +188,76 @@ class LaTeXValidator:
                     severity='error'
                 )
             )
+
+        return errors
+
+    def _check_html_syntax(self, lines: List[str]) -> List[ValidationError]:
+        """Check for HTML/XML syntax instead of LaTeX syntax.
+
+        Detects common errors like:
+        - </end{...}> instead of \\end{...}
+        - <tag> instead of \\tag
+        - Wrong closing tag formats
+
+        Args:
+            lines: List of LaTeX file lines
+
+        Returns:
+            List of ValidationError objects for detected HTML syntax
+        """
+        import re
+        errors = []
+
+        # Patterns to detect HTML/XML syntax
+        html_patterns = [
+            (r'</end\{[^}]+\}>', 'html_closing_tag',
+             'HTML closing tag found: "{match}". Use LaTeX syntax: \\end{{...}}'),
+            (r'<end\{[^}]+\}>', 'html_opening_tag',
+             'HTML tag found: "{match}". Use LaTeX syntax: \\end{{...}}'),
+            (r'</[a-zA-Z]+>', 'html_xml_tag',
+             'HTML/XML closing tag found: "{match}". Use LaTeX syntax with backslash: \\end{{...}}'),
+            (r'<begin\{[^}]+\}>', 'html_begin_tag',
+             'HTML tag found: "{match}". Use LaTeX syntax: \\begin{{...}}'),
+        ]
+
+        for line_num, line in enumerate(lines, start=1):
+            # Skip comment lines
+            if line.strip().startswith('%'):
+                continue
+
+            for pattern, error_type, message_template in html_patterns:
+                matches = re.finditer(pattern, line)
+                for match in matches:
+                    matched_text = match.group(0)
+
+                    # Determine correct LaTeX syntax
+                    if 'end' in matched_text.lower():
+                        # Extract environment name if possible
+                        env_match = re.search(r'\{([^}]+)\}', matched_text)
+                        if env_match:
+                            env_name = env_match.group(1)
+                            suggested_fix = f'Replace with: \\end{{{env_name}}}'
+                        else:
+                            suggested_fix = 'Replace with: \\end{environment_name}'
+                    elif 'begin' in matched_text.lower():
+                        env_match = re.search(r'\{([^}]+)\}', matched_text)
+                        if env_match:
+                            env_name = env_match.group(1)
+                            suggested_fix = f'Replace with: \\begin{{{env_name}}}'
+                        else:
+                            suggested_fix = 'Replace with: \\begin{environment_name}'
+                    else:
+                        suggested_fix = 'Use LaTeX syntax with backslash (\\) instead of angle brackets'
+
+                    errors.append(
+                        ValidationError(
+                            line_number=line_num,
+                            error_type=error_type,
+                            environment='html_syntax',
+                            message=message_template.format(match=matched_text),
+                            suggested_fix=suggested_fix,
+                            severity='error'
+                        )
+                    )
 
         return errors

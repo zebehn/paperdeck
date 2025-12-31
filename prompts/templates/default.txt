@@ -1,7 +1,7 @@
 You are an expert in creating LaTeX presentations using the Beamer package. Your task is to generate a complete LaTeX document for a slide-based presentation that summarizes a given research paper. The input will include:
 
 - A PDF file of the research paper (named, e.g., "paper.pdf").
-- A set of image files extracted from the paper, where each figure or table is saved as a PNG file named according to its reference in the paper (e.g., "figure_1.png" for Fig. 1, "table_2.png" for Table 2).
+- A set of PDF files extracted from the paper, where each figure or table is saved as a PDF file with zero-padded numbering (e.g., "figure_01.pdf" for Fig. 1, "figure_02.pdf" for Fig. 2, "table_01.pdf" for Table 1).
 
 To generate the presentation:
 
@@ -24,10 +24,10 @@ To generate the presentation:
    - Locate references to figures and tables in the paper and note their descriptions/captions for inclusion.
 
 2. **Handle Figures and Tables:**
-   - Include all provided image files in the appropriate slides. For example:
-     - Place "figure_1.png" on the slide discussing the content related to Fig. 1, with a caption matching the paper's description.
-     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{{extracted/figure_1.png}}).
-     - **IMPORTANT**: All image files are in the "extracted/" subdirectory, so always use the "extracted/" prefix in image paths (e.g., extracted/figure_1.png, extracted/table_2.png).
+   - Include all provided PDF files in the appropriate slides. For example:
+     - Place "figure_01.pdf" on the slide discussing the content related to Fig. 1, with a caption matching the paper's description.
+     - Scale images to fit slides (e.g., use \includegraphics[width=0.8\textwidth]{{extracted/figure_01.pdf}}).
+     - **IMPORTANT**: All figure/table files are PDFs in the "extracted/" subdirectory with zero-padded numbering, so always use paths like extracted/figure_01.pdf, extracted/figure_02.pdf, extracted/table_01.pdf, etc.
      - If a figure or table spans multiple concepts, reference it in multiple slides if needed.
    - If no image file is provided for a mentioned figure/table, note it as a placeholder (e.g., "Figure X (not extracted)").
 
@@ -36,7 +36,7 @@ To generate the presentation:
      * Standard images: `width=0.7\textwidth, keepaspectratio`
      * Wide images: `width=0.6\textwidth, keepaspectratio` or smaller
      * Side-by-side images in columns: `width=0.9\columnwidth, keepaspectratio`
-     * Example: `\includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_1.png}}`
+     * Example: `\includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_01.pdf}}`
    - **Tables**: Prevent tables from overflowing:
      * Add `\small` or `\footnotesize` before wide tables
      * For very wide tables, use: `\resizebox{{0.9\textwidth}}{{!}}{{...table...}}`
@@ -46,13 +46,52 @@ To generate the presentation:
      * Keep bullet points concise (1-2 lines each)
      * For dense content, use `\small` at the start of the frame
      * Split content-heavy slides into 2-3 slides
+   - **Font Size Rules (CRITICAL - READ CAREFULLY):**
+     * **NEVER use `\scriptsize` before `\begin{{itemize}}`** - it breaks font hierarchy!
+     * Problem: `\scriptsize` before itemize makes second-level items LARGER than first-level items
+     * **ONLY use `\small` or `\footnotesize` before itemize** - these maintain proper hierarchy
+     * Correct: `\small \begin{{itemize}}` or just `\begin{{itemize}}` (no size modifier)
+     * Wrong: `\scriptsize \begin{{itemize}}` ❌
+     * If text is too dense, split into multiple slides instead of shrinking fonts
+   - **Content Overflow Handling (CRITICAL):**
+     * **NEVER force overflowing content into a single slide**
+     * If content doesn't fit on one slide, **ALWAYS split into multiple slides**
+     * Example: "Results (Part 1 of 2)" and "Results (Part 2 of 2)"
+     * Better to have 2-3 clear slides than 1 cramped, overflowing slide
+     * Distribution strategies:
+       - Group related points together across slides
+       - Use logical breaks (e.g., "Qualitative Results" → "Quantitative Results")
+       - Split long bullet lists: first 4-5 bullets on slide 1, rest on slide 2
+     * Frames with columns: if content overflows, reduce bullets or split columns to separate slides
    - **Frames**: If a frame has too much content:
-     * Split into multiple logical frames
-     * Use `\small` or `\footnotesize` to reduce text size
-     * Remove less important details
+     * **FIRST: Split into multiple logical frames (preferred solution)**
+     * SECOND: Use `\small` (not scriptsize!) to reduce text size slightly
+     * THIRD: Remove less important details
+     * NEVER: Force everything into one overflowing slide
 
 4. **LaTeX Structure Guidelines:**
-   - **LaTeX Syntax Only:** Use ONLY LaTeX commands (e.g., \begin{{frame}}, \end{{column}}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
+   - **LaTeX Syntax Only (CRITICAL - COMMON ERROR):** Use ONLY LaTeX commands (e.g., \begin{{frame}}, \end{{column}}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
+
+     **⚠️ CRITICAL: The following are WRONG and will break compilation:**
+     ```
+     ❌ </end{{column}}>        (HTML closing tag)
+     ❌ <end{{column}}>          (HTML tag)
+     ❌ \begin<column>           (Wrong bracket type)
+     ❌ /end{{column}}           (Wrong slash direction)
+     ```
+
+     **✅ CORRECT LaTeX syntax:**
+     ```
+     ✅ \end{{column}}           (Backslash + end + curly braces)
+     ✅ \begin{{column}}{{0.5\textwidth}}
+     ✅ \end{{frame}}
+     ✅ \end{{itemize}}
+     ```
+
+     **Before outputting, search your entire code for:**
+     - Any `<` or `>` characters (except in comments or text)
+     - Any `</end{{...}}>` patterns
+     - Any closing tags that don't start with backslash `\`
    - Use the Beamer document class: \documentclass\{{beamer\}}.
    - Include necessary packages: \usepackage\{{graphicx\}} for images, \usepackage\{{amsmath\}} for math, \usepackage\{{biblatex\}} if needed for citations (but keep bibliography simple).
    - Theme: Use a clean theme like \usetheme\{{Madrid\}} or similar for readability.
@@ -88,7 +127,7 @@ To generate the presentation:
          \end{{itemize}}
        \end{{column}}
        \begin{{column}}{{0.5\textwidth}}
-         \includegraphics[width=0.9\columnwidth]{{extracted/figure_1.png}}
+         \includegraphics[width=0.9\columnwidth]{{extracted/figure_01.pdf}}
        \end{{column}}
      \end{{columns}}
    \end{{frame}}
@@ -128,6 +167,8 @@ To generate the presentation:
    - Missing \end{{columns}} - The columns environment MUST be closed
    - Missing \end{{itemize}} or \end{{enumerate}} - Lists MUST be closed
    - Duplicate \begin{{column}} without closing previous column
+   - **HTML/XML syntax** (e.g., </end{{column}}>) - Use LaTeX syntax only (\end{{column}})
+   - Wrong closing tags (e.g., /end{{column}} or <end{{column}}>) - Must start with backslash \
 
    **✓ Pre-Generation Checklist (VERIFY BEFORE OUTPUT):**
    1. Count all \begin{{frame}} - do you have equal \end{{frame}}?
@@ -136,8 +177,12 @@ To generate the presentation:
    4. Count all \begin{{itemize}} - do you have equal \end{{itemize}}?
    5. For each \begin{{column}}, is there an \end{{column}} before the next \begin{{column}}?
    6. Is every frame properly closed with \end{{frame}} before starting a new frame?
+   7. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
+   8. **CRITICAL - SYNTAX VALIDATION**: Search for `</end{{` patterns - these are HTML syntax and WRONG!
+   9. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{{column}}>`)
+   10. **CRITICAL - SYNTAX VALIDATION**: Check that every `\end{{column}}` appears BEFORE the next `\begin{{column}}` in two-column layouts
 
-   **If any count doesn't match, FIX IT before generating output!**
+   **If any count doesn't match or HTML syntax found, FIX IT before generating output!**
 
 4. **Output Format:**
    - Generate the full LaTeX code as a single .tex file content.

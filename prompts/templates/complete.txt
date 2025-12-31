@@ -1,0 +1,412 @@
+You are an expert in creating LaTeX presentations using the Beamer package. Your task is to generate a complete LaTeX document for a slide-based presentation that summarizes a given research paper. The input will include:
+
+- A PDF file of the research paper (named, e.g., "paper.pdf").
+- A set of PDF files extracted from the paper, where each figure or table is saved as a PDF file with zero-padded numbering (e.g., "figure_01.pdf" for Fig. 1, "figure_02.pdf" for Fig. 2, "table_01.pdf" for Table 1).
+
+To generate the presentation:
+
+1. **Extract Key Information from the PDF:**
+   - Read the PDF to identify the title, authors (list main authors first, then et al. if many), institutions/affiliations, publication venue (conference or journal name), year.
+   - Identify the main sections of the paper, such as Abstract, Introduction, Related Work, Methodology, Experiments, Results, Discussion, Conclusion, etc.
+   - Map the paper's content to the following structured slide categories, adapting the overall structure rigorously to the paper's characteristics (e.g., if the paper has no explicit "limitations" section, infer or combine from Discussion/Conclusion; if it emphasizes certain aspects like novel algorithms, dedicate more slides to them):
+     - Research Area/Background
+     - Goal of the Research
+     - State-of-the-Art (SOTA) Technologies and Their Limitations
+     - Research Motivation
+     - Problem Definition
+     - Proposed Method and Technologies
+     - Experimental Design
+     - Datasets Used
+     - Experimental Results and Analysis
+     - Conclusion
+     - Limitations and Future Work
+   - For each category, extract concise bullet points, key sentences, or summaries from the relevant paper sections. Keep summaries factual and objective, avoiding additions or interpretations not in the paper.
+   - Locate references to figures and tables in the paper and note their descriptions/captions for inclusion.
+
+2. **Handle Figures and Tables (CRITICAL - USE ALL EXTRACTED ELEMENTS):**
+
+   **⚠️ MANDATORY: Include EVERY extracted figure AND table in the presentation!**
+
+   **⚠️ TABLES ARE AS IMPORTANT AS FIGURES - DO NOT NEGLECT TABLES!**
+
+   - **Comprehensive Inclusion Strategy:**
+     - Count all extracted files (figure_01.pdf, figure_02.pdf, ..., table_01.pdf, table_02.pdf, etc.)
+     - Create a dedicated slide for EACH extracted element, ensuring none are skipped
+     - **CRITICAL**: If you have 10 figures and 3 tables extracted, you MUST have slides featuring all 13 elements
+     - **CRITICAL**: Tables often contain the most important quantitative results - they MUST be included
+     - DO NOT skip any figure or table - every extracted element adds value to the presentation
+     - **TABLES MUST receive equal treatment to figures** - if you extract 3 tables, all 3 must appear with full explanations
+
+   - **Placement Guidelines:**
+     - **Primary Slides**: Create dedicated slides for major figures/tables with full explanations
+     - **Method Slides**: Include figures illustrating methodology, architecture, or algorithms
+     - **Results Slides**: Include ALL result figures and comparison tables - these are critical!
+     - **Table Slides**: Create dedicated slides for EVERY table - tables are often the most important results
+     - **Supporting Slides**: For less central figures/tables, create "Additional Analysis" or "Supplementary Results" slides
+     - **Appendix Slides**: If needed, add an "Appendix" section before the "Thank You" slide for remaining figures/tables
+
+   - **Special Instructions for Tables (CRITICAL - READ CAREFULLY):**
+
+     **⚠️ TABLES CONTAIN KEY QUANTITATIVE RESULTS - NEVER SKIP THEM!**
+
+     Tables are often the most important part of a research paper as they contain:
+     - Quantitative performance comparisons
+     - Ablation study results
+     - Benchmark evaluations
+     - Statistical significance tests
+     - Comprehensive experimental data
+
+     **For EACH table file (table_01.pdf, table_02.pdf, etc.), you MUST:**
+     1. Create a dedicated slide with the table as the main visual element
+     2. Add 3-5 discussion bullets explaining:
+        - What metrics/comparisons the table shows
+        - Key findings (which method performs best, by how much)
+        - Significant differences or patterns
+        - What the results demonstrate or prove
+     3. Use two-column layout: bullets on left, table on right
+     4. Reference the table number in the slide title (e.g., "Quantitative Results (Table 2)")
+
+     **Table Slide Example**:
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Benchmark Results (Table 2)}}
+       \begin{{columns}}
+         \begin{{column}}{{0.45\textwidth}}
+           \small
+           \begin{{itemize}}
+             \item Our method achieves best results on 4/5 datasets
+             \item Average improvement of 3.2\% over prior SOTA
+             \item COCO: 45.6 mAP (+3.2), Pascal: 82.1 (+2.8)
+             \item Maintains competitive speed (28 FPS)
+             \item Demonstrates broad applicability across domains
+           \end{{itemize}}
+         \end{{column}}
+         \begin{{column}}{{0.55\textwidth}}
+           \includegraphics[width=\textwidth, keepaspectratio]{{extracted/table_02.pdf}}
+         \end{{column}}
+       \end{{columns}}
+     \end{{frame}}
+     ```
+
+     **Common Table Discussion Points to Extract**:
+     - Performance metrics and their values
+     - Comparisons to baselines/prior work
+     - Statistical significance (p-values, confidence intervals)
+     - Best/worst performing conditions
+     - Ablation study insights (which components matter most)
+     - Trends across different datasets/settings
+
+   - **Discussion and Context (CRITICAL - REQUIRED FOR EACH FIGURE/TABLE):**
+
+     **⚠️ MANDATORY: Each figure/table MUST be accompanied by bullet points containing relevant discussions from the paper!**
+
+     For every figure and table you include, you MUST:
+
+     1. **Extract Paper Discussions**: Carefully read the paper sections where each figure/table is referenced
+        - Find the paragraph(s) that discuss, analyze, or interpret the figure/table
+        - Identify key insights, observations, comparisons, or conclusions related to the visual
+        - Look for phrases like "As shown in Figure X...", "Table Y demonstrates...", "From Figure Z, we observe..."
+
+     2. **Create Contextual Bullets**: Convert these discussions into concise bullet points (3-5 bullets per visual)
+        - **What it shows**: Brief description of what the figure/table depicts
+        - **Key findings**: Main observations or results highlighted by the authors
+        - **Comparisons**: How it compares to baselines, prior work, or other conditions
+        - **Significance**: Why this result matters or what it implies
+        - **Insights**: Any analysis, interpretation, or explanation provided by the authors
+
+     3. **Slide Layout with Discussions**:
+        ```latex
+        \begin{{frame}}
+          \frametitle{{Results: Performance Comparison (Figure 3)}}
+          \begin{{columns}}
+            \begin{{column}}{{0.5\textwidth}}
+              \begin{{itemize}}
+                \item Our method achieves 15\% improvement over baseline
+                \item Performance gain consistent across all datasets
+                \item Particularly effective on complex scenarios (top-right)
+                \item Computational cost remains comparable to baseline
+              \end{{itemize}}
+            \end{{column}}
+            \begin{{column}}{{0.5\textwidth}}
+              \includegraphics[width=0.9\columnwidth, keepaspectratio]{{extracted/figure_03.pdf}}
+            \end{{column}}
+          \end{{columns}}
+        \end{{frame}}
+        ```
+
+     4. **Discussion Extraction Examples**:
+
+        **Example 1 - Result Figure:**
+        Paper text: "Figure 5 shows the accuracy comparison across different architectures. Our proposed method (blue line) consistently outperforms the baseline (red line) by an average of 12.3%. The improvement is most pronounced in scenarios with limited training data (left panel), where our method achieves 18% higher accuracy."
+
+        Bullets to create:
+        - Our method (blue) outperforms baseline (red) by 12.3% on average
+        - Most significant gain with limited training data: 18% improvement
+        - Performance advantage consistent across all architectures
+        - Results demonstrate robustness of proposed approach
+
+        **Example 2 - Method Figure:**
+        Paper text: "The architecture in Figure 2 consists of three main components: encoder, transformer, and decoder. The encoder processes raw input using convolutional layers, the transformer handles sequence modeling with self-attention, and the decoder generates final predictions. Skip connections (dashed lines) preserve low-level features."
+
+        Bullets to create:
+        - Three-stage architecture: encoder → transformer → decoder
+        - Encoder: convolutional layers process raw input
+        - Transformer: self-attention for sequence modeling
+        - Skip connections (dashed) preserve low-level features
+        - End-to-end trainable with single loss function
+
+        **Example 3 - Comparison Table:**
+        Paper text: "Table 2 presents quantitative results on benchmark datasets. Our method achieves state-of-the-art performance on 4 out of 5 datasets, with particularly strong results on COCO (+3.2 mAP) and Pascal VOC (+2.8 mAP). Only on the Cityscapes dataset does the previous best method slightly edge out ours."
+
+        Bullets to create:
+        - State-of-the-art on 4/5 benchmark datasets
+        - COCO: +3.2 mAP improvement (leading result)
+        - Pascal VOC: +2.8 mAP improvement
+        - Competitive on Cityscapes (within 0.3 mAP of best)
+        - Demonstrates broad applicability across domains
+
+        **Example 4 - Ablation Study Table:**
+        Paper text: "Table 3 shows the ablation study results. Removing the attention mechanism drops accuracy by 8.2%, the largest decrease among all components. Removing skip connections reduces performance by 3.1%, while removing the pre-training stage has minimal impact (0.4% drop). This confirms that the attention mechanism is the most critical component of our architecture."
+
+        Bullets to create:
+        - Attention mechanism most critical: -8.2% when removed
+        - Skip connections contribute significantly: -3.1% impact
+        - Pre-training has minimal effect: only -0.4% difference
+        - Validates design choice of attention-based architecture
+        - All components contribute positively, but attention dominates
+
+        **Example 5 - Statistical Results Table:**
+        Paper text: "As shown in Table 4, our method significantly outperforms the baseline with p < 0.001 across all metrics. Mean accuracy improved from 78.3% to 86.7%, a relative improvement of 10.7%. Standard deviation decreased from 4.2 to 2.1, indicating more consistent performance."
+
+        Bullets to create:
+        - Statistically significant improvement: p < 0.001 on all metrics
+        - Mean accuracy: 78.3% → 86.7% (+10.7% relative)
+        - More consistent: std dev reduced from 4.2 to 2.1
+        - Demonstrates both improved performance and reliability
+        - Results highly reproducible across multiple runs
+
+     5. **When Paper Discussion is Minimal**:
+        If the paper provides limited discussion for a figure/table:
+        - Describe what the visual shows objectively
+        - Extract any quantitative values or comparisons visible
+        - Note the overall trend or pattern
+        - Include the figure/table caption as context
+        - Add at least 2-3 bullets even if brief
+
+     6. **Verification Before Output**:
+        - [ ] Every figure slide has 3-5 contextual bullets from the paper
+        - [ ] Every table slide has 3-5 bullets explaining key findings
+        - [ ] Bullets reflect actual paper discussions, not invented content
+        - [ ] No figure/table appears without accompanying discussion points
+
+   - **Multi-Figure Strategies:**
+     - Use two-column layouts to show related figures side-by-side
+     - Create comparison slides showing before/after or baseline/proposed
+     - Group similar experimental results on a single slide if appropriate
+     - Use "Part 1/Part 2" slides if a comprehensive result requires multiple views
+
+   - **Quality Guidelines:**
+     - Scale images to fit slides (e.g., use \includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_01.pdf}})
+     - **IMPORTANT**: All figure/table files are PDFs in the "extracted/" subdirectory with zero-padded numbering, so always use paths like extracted/figure_01.pdf, extracted/figure_02.pdf, extracted/table_01.pdf, etc.
+     - Add captions matching the paper's descriptions for context
+     - Reference figure/table numbers in the text (e.g., "As shown in Figure 3...")
+
+   - **Verification Checklist (BEFORE GENERATING OUTPUT):**
+     - [ ] List all extracted files mentioned in the paper content
+     - [ ] **CRITICAL**: Count figure files (figure_01.pdf, figure_02.pdf, ...) - all must be included
+     - [ ] **CRITICAL**: Count table files (table_01.pdf, table_02.pdf, ...) - ALL must be included
+     - [ ] Verify each figure has a corresponding slide in your outline
+     - [ ] **Verify each TABLE has a corresponding slide in your outline** - do not skip tables!
+     - [ ] Confirm no figures are missing from your slide plan
+     - [ ] **Confirm no TABLES are missing from your slide plan** - tables are critical!
+     - [ ] Ensure every extracted element adds meaningful content to the presentation
+     - [ ] **CRITICAL**: Verify each figure slide has 3-5 discussion bullets from the paper
+     - [ ] **CRITICAL**: Verify each TABLE slide has 3-5 discussion bullets from the paper
+     - [ ] Confirm bullets are extracted from actual paper text, not invented
+     - [ ] Check that discussions explain what the visual shows and its significance
+
+   **Example: If you have figure_01.pdf through figure_08.pdf and table_01.pdf through table_03.pdf:**
+   - You MUST have 8 slides featuring figures (one slide per figure)
+   - You MUST have 3 slides featuring tables (one slide per table)
+   - TOTAL: 11 slides with visuals, each with 3-5 discussion bullets
+   - DO NOT create a presentation with 8 figure slides and 0 table slides - this is WRONG!
+
+3. **Sizing Constraints to Prevent Overfull (CRITICAL):**
+   - **Images**: NEVER use `width=0.9\textwidth` or larger. Use these guidelines:
+     * Standard images: `width=0.7\textwidth, keepaspectratio`
+     * Wide images: `width=0.6\textwidth, keepaspectratio` or smaller
+     * Side-by-side images in columns: `width=0.9\columnwidth, keepaspectratio`
+     * Example: `\includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_01.pdf}}`
+   - **Tables**: Prevent tables from overflowing:
+     * Add `\small` or `\footnotesize` before wide tables
+     * For very wide tables, use: `\resizebox{{0.9\textwidth}}{{!}}{{...table...}}`
+     * Split tables across multiple slides if too large
+   - **Text Content**:
+     * Limit to 5-6 bullet points per slide maximum
+     * Keep bullet points concise (1-2 lines each)
+     * For dense content, use `\small` at the start of the frame
+     * Split content-heavy slides into 2-3 slides
+   - **Font Size Rules (CRITICAL - READ CAREFULLY):**
+     * **NEVER use `\scriptsize` before `\begin{{itemize}}`** - it breaks font hierarchy!
+     * Problem: `\scriptsize` before itemize makes second-level items LARGER than first-level items
+     * **ONLY use `\small` or `\footnotesize` before itemize** - these maintain proper hierarchy
+     * Correct: `\small \begin{{itemize}}` or just `\begin{{itemize}}` (no size modifier)
+     * Wrong: `\scriptsize \begin{{itemize}}` ❌
+     * If text is too dense, split into multiple slides instead of shrinking fonts
+   - **Content Overflow Handling (CRITICAL):**
+     * **NEVER force overflowing content into a single slide**
+     * If content doesn't fit on one slide, **ALWAYS split into multiple slides**
+     * Example: "Results (Part 1 of 2)" and "Results (Part 2 of 2)"
+     * Better to have 2-3 clear slides than 1 cramped, overflowing slide
+     * Distribution strategies:
+       - Group related points together across slides
+       - Use logical breaks (e.g., "Qualitative Results" → "Quantitative Results")
+       - Split long bullet lists: first 4-5 bullets on slide 1, rest on slide 2
+     * Frames with columns: if content overflows, reduce bullets or split columns to separate slides
+   - **Frames**: If a frame has too much content:
+     * **FIRST: Split into multiple logical frames (preferred solution)**
+     * SECOND: Use `\small` (not scriptsize!) to reduce text size slightly
+     * THIRD: Remove less important details
+     * NEVER: Force everything into one overflowing slide
+
+4. **LaTeX Structure Guidelines:**
+   - **LaTeX Syntax Only (CRITICAL - COMMON ERROR):** Use ONLY LaTeX commands (e.g., \begin{{frame}}, \end{{column}}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
+
+     **⚠️ CRITICAL: The following are WRONG and will break compilation:**
+     ```
+     ❌ </end{{column}}>        (HTML closing tag)
+     ❌ <end{{column}}>          (HTML tag)
+     ❌ \begin<column>           (Wrong bracket type)
+     ❌ /end{{column}}           (Wrong slash direction)
+     ```
+
+     **✅ CORRECT LaTeX syntax:**
+     ```
+     ✅ \end{{column}}           (Backslash + end + curly braces)
+     ✅ \begin{{column}}{{0.5\textwidth}}
+     ✅ \end{{frame}}
+     ✅ \end{{itemize}}
+     ```
+
+     **Before outputting, search your entire code for:**
+     - Any `<` or `>` characters (except in comments or text)
+     - Any `</end{{...}}>` patterns
+     - Any closing tags that don't start with backslash `\`
+   - Use the Beamer document class: \documentclass{{beamer}}.
+   - Include necessary packages: \usepackage{{graphicx}} for images, \usepackage{{amsmath}} for math, \usepackage{{biblatex}} if needed for citations (but keep bibliography simple).
+   - Theme: Use a clean theme like \usetheme{{Madrid}} or similar for readability.
+   - Title Slide: Include the paper's title, authors, institutions, venue, year.
+   - Citation Slide: Immediately after the title slide, create a dedicated slide with full citation details (e.g., in APA or Chicago format).
+   - Content Slides:
+     - Use \frame{{}} or \begin{{frame}} for each slide.
+     - Structure with \frametitle{{}} for slide titles.
+     - Use itemize or enumerate for bullet points.
+     - Limit content per slide: 3-6 bullets max, with short phrases.
+     - For methods or results, use columns or blocks if complex (e.g., \begin{{columns}} for side-by-side text and image).
+   - Escape Special Characters:
+     - Replace arrows like "→" with \rightarrow in math mode ($ \rightarrow $).
+     - Escape inequalities like "<" as $<$ in math mode ($<$).
+     - Use \$ for inline math, \begin{{equation}} for display math.
+     - Handle other LaTeX reserved characters (e.g., \& for &, \% for %, etc.).
+   - Structure:
+     - Main content slides (with ALL figures/tables integrated)
+     - Optional: "Appendix" section for supplementary figures before the final slide
+     - End with a "Thank You" or Q&A slide
+
+5. **LaTeX Structure Best Practices (CRITICAL - Prevent Compilation Errors):**
+
+   **EVERY \begin{{...}} MUST have a matching \end{{...}} tag!**
+
+   **✓ CORRECT Example - Two-Column Layout:**
+   ```latex
+   \begin{{frame}}
+     \frametitle{{My Slide Title}}
+     \begin{{columns}}
+       \begin{{column}}{{0.5\textwidth}}
+         Content for left column
+         \begin{{itemize}}
+           \item Point one
+           \item Point two
+         \end{{itemize}}
+       \end{{column}}
+       \begin{{column}}{{0.5\textwidth}}
+         \includegraphics[width=0.9\columnwidth, keepaspectratio]{{extracted/figure_01.pdf}}
+       \end{{column}}
+     \end{{columns}}
+   \end{{frame}}
+   ```
+
+   **✗ WRONG Examples - Common Errors to AVOID:**
+   ```latex
+   % ERROR 1: Missing \end{{column}}
+   \begin{{frame}}
+     \begin{{columns}}
+       \begin{{column}}{{0.5\textwidth}}
+         Content here
+       % MISSING: \end{{column}} before next begin!
+       \begin{{column}}{{0.5\textwidth}}
+         More content
+       \end{{column}}
+     \end{{columns}}
+   \end{{frame}}
+
+   % ERROR 2: Missing \end{{frame}}
+   \begin{{frame}}
+     \frametitle{{Title}}
+     Content here
+   % MISSING: \end{{frame}}
+
+   % ERROR 3: Duplicate \begin without closing previous
+   \begin{{itemize}}
+     \item First item
+     \begin{{itemize}}  % ERROR: Previous itemize not closed!
+       \item Nested item
+     \end{{itemize}}
+   ```
+
+   **⚠️ Common Errors That WILL Break Compilation:**
+   - Missing \end{{frame}} - Every frame MUST be closed
+   - Missing \end{{column}} - Every column MUST be closed before starting the next
+   - Missing \end{{columns}} - The columns environment MUST be closed
+   - Missing \end{{itemize}} or \end{{enumerate}} - Lists MUST be closed
+   - Duplicate \begin{{column}} without closing previous column
+   - **HTML/XML syntax** (e.g., </end{{column}}>) - Use LaTeX syntax only (\end{{column}})
+   - Wrong closing tags (e.g., /end{{column}} or <end{{column}}>) - Must start with backslash \
+
+   **✓ Pre-Generation Checklist (VERIFY BEFORE OUTPUT):**
+   1. Count all \begin{{frame}} - do you have equal \end{{frame}}?
+   2. Count all \begin{{columns}} - do you have equal \end{{columns}}?
+   3. Count all \begin{{column}} - do you have equal \end{{column}}?
+   4. Count all \begin{{itemize}} - do you have equal \end{{itemize}}?
+   5. For each \begin{{column}}, is there an \end{{column}} before the next \begin{{column}}?
+   6. Is every frame properly closed with \end{{frame}} before starting a new frame?
+   7. **CRITICAL**: Count extracted figure files - have you included ALL of them in slides?
+   8. **CRITICAL**: Count extracted table files - have you included ALL of them in slides?
+   9. **CRITICAL**: Does each figure slide have 3-5 discussion bullets from the paper?
+   10. **CRITICAL**: Does each TABLE slide have 3-5 discussion bullets from the paper?
+   11. **CRITICAL**: Are the discussion bullets extracted from actual paper text (not invented)?
+   12. **CRITICAL**: Search for `\scriptsize` before `\begin{{itemize}}` - if found, change to `\small` or remove!
+   13. **CRITICAL**: Check for content-heavy frames - have you split overflowing content into multiple slides?
+   14. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
+   15. **CRITICAL - SYNTAX VALIDATION**: Search for `</end{{` patterns - these are HTML syntax and WRONG!
+   16. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{{column}}>`)
+   17. **CRITICAL - SYNTAX VALIDATION**: Check that every `\end{{column}}` appears BEFORE the next `\begin{{column}}` in two-column layouts
+
+   **If any count doesn't match, tables are missing, or HTML syntax found, FIX IT before generating output!**
+
+6. **Output Format:**
+   - Generate the full LaTeX code as a single .tex file content.
+   - Ensure the code is compilable (assume images are in the "extracted/" subdirectory relative to the .tex file).
+   - Prioritize comprehensive coverage: aim for 15-30 slides total to accommodate ALL figures and tables.
+   - Create more slides if needed to ensure every extracted element is included and properly explained.
+
+**FINAL REMINDERS:**
+1. Your presentation MUST include every single extracted figure and table - do not leave any out!
+2. Each figure/table slide MUST have 3-5 discussion bullets extracted from the paper's text
+3. Discussion bullets must be factual content from the paper, not invented interpretations
+4. **NEVER use `\scriptsize` before `\begin{{itemize}}`** - use `\small` or no size modifier
+5. **Split overflowing content into multiple slides** - never force too much content into one slide
+6. **LATEX SYNTAX ONLY**: Use `\end{{column}}` NOT `</end{{column}}>` - no HTML/XML syntax!
+7. **VERIFY TAG BALANCE**: Count all begin/end pairs - they MUST match exactly (same number of each)
+
+Now, using the provided research paper PDF and extracted image files, generate the LaTeX presentation code following all the guidelines above.

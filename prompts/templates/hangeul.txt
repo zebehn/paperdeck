@@ -17,17 +17,18 @@ Organize the presentation with the following flow, adjusting slightly based on t
 6.  **Future Work:** Suggestions for related or future studies based on your analysis.
 
 **## 3. Image & Table Handling**
-* **Filename Mapping:** Insert images using the following naming convention:
-    * If the paper cites "Fig. 1", use filename `extracted/figure_1.png`.
-    * If the paper cites "Table 1", use filename `extracted/table_1.png`.
-    * **IMPORTANT:** All image files are located in the `extracted/` subdirectory, so always include the `extracted/` prefix in image paths.
-    * (e.g., `\includegraphics{{extracted/figure_10.png}}`)
+* **Filename Mapping:** Insert PDF files using the following naming convention with zero-padded numbering:
+    * If the paper cites "Fig. 1", use filename `extracted/figure_01.pdf`.
+    * If the paper cites "Table 1", use filename `extracted/table_01.pdf`.
+    * If the paper cites "Fig. 10", use filename `extracted/figure_10.pdf`.
+    * **IMPORTANT:** All figures/tables are PDF files in the `extracted/` subdirectory with zero-padded numbering, so always use paths like extracted/figure_01.pdf, extracted/figure_02.pdf, extracted/table_01.pdf.
+    * (e.g., `\includegraphics{{extracted/figure_10.pdf}}`)
 * **Scaling (CRITICAL - Prevent Overfull):** NEVER use `width=0.9\textwidth` or larger. Follow these guidelines strictly:
     * **Standard images:** `width=0.7\textwidth, keepaspectratio`
     * **Wide images:** `width=0.6\textwidth, keepaspectratio` or smaller
     * **Side-by-side in columns:** `width=0.9\columnwidth, keepaspectratio`
     * **Tables:** Add `\small` or `\footnotesize` before wide tables, or use `\resizebox{{0.9\textwidth}}{{!}}{{...table...}}`
-    * **Example:** `\includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_10.png}}`
+    * **Example:** `\includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_10.pdf}}`
 * **Layout Logic:**
     * **Wide Images:** Place text at the top and the image at the bottom. Do not use columns.
     * **Standard Images:** Place explanatory text on the **Left** (or Top) and the image on the **Right** (or Bottom).
@@ -58,7 +59,7 @@ Organize the presentation with the following flow, adjusting slightly based on t
       \end{{itemize}}
     \end{{column}}
     \begin{{column}}{{0.5\textwidth}}
-      \includegraphics[width=0.9\columnwidth]{{extracted/figure_1.png}}
+      \includegraphics[width=0.9\columnwidth]{{extracted/figure_01.pdf}}
     \end{{column}}
   \end{{columns}}
 \end{{frame}}

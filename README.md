@@ -73,6 +73,8 @@ paperdeck generate [OPTIONS] PDF_PATH
 - `--provider TEXT` - AI provider: openai, anthropic, ollama, lmstudio (default: openai)
 - `--model TEXT` - Specific model to use (e.g., gpt-4, claude-3-opus)
 - `--api-key TEXT` - API key for cloud providers
+- `--skip-extraction` - Skip figure/table extraction, use pre-extracted files
+- `--elements-input-dir PATH` - Directory with pre-extracted elements (default: <output>/extracted)
 - `--no-compile` - Skip LaTeX compilation to PDF
 - `-v, --verbose` - Enable verbose output
 - `--help` - Show help message
@@ -98,6 +100,18 @@ paperdeck generate my_paper.pdf --provider ollama --model llama2
 
 # Generate LaTeX only, skip PDF compilation
 paperdeck generate my_paper.pdf --no-compile
+
+# Fast regeneration: Skip slow extraction, use pre-extracted figures
+# First run: Extract and generate (30-40 seconds)
+paperdeck generate my_paper.pdf -o output/
+
+# Subsequent runs: Regenerate with different settings (< 5 seconds)
+paperdeck generate my_paper.pdf --skip-extraction --prompt hangeul
+paperdeck generate my_paper.pdf --skip-extraction --theme Berkeley
+paperdeck generate my_paper.pdf --skip-extraction --model gpt-4
+
+# Use pre-extracted elements from custom directory
+paperdeck generate my_paper.pdf --skip-extraction --elements-input-dir ./my_figures/
 ```
 
 #### `paperdeck list-prompts`
@@ -155,7 +169,9 @@ ai_services:
   timeout_seconds: 60
 
 extraction:
-  confidence_threshold: 0.75
+  confidence_threshold: 0.75  # Detection confidence (0.0-1.0, default: 0.5)
+  boundary_padding: 10        # Extra pixels around elements (default: 0)
+  max_pages: 50               # Limit extraction to first N pages (optional)
   element_types:
     - FIGURE
     - TABLE
@@ -166,6 +182,37 @@ default_theme: Madrid
 default_prompt: default
 log_level: INFO
 ```
+
+#### Extraction Parameters Explained
+
+**confidence_threshold** (0.0-1.0, default: 0.5)
+- Controls how confident DocScalpel must be to extract an element
+- Higher values (0.7-0.9): Fewer false positives, may miss some elements
+- Lower values (0.3-0.5): More elements extracted, may include false positives
+- Recommended: 0.75 for high-quality papers, 0.5 for general use
+
+**boundary_padding** (pixels, default: 0)
+- Adds extra space around extracted figures/tables
+- Useful when elements are cropped too tightly
+- Typical values: 5-20 pixels
+- Example: 10 pixels adds a 10px border on all sides
+
+**max_pages** (optional)
+- Limits extraction to first N pages of the PDF
+- Useful for testing or when processing very large papers
+- Omit or set to `null` to process all pages
+
+**Example output when running extraction**:
+```
+INFO - Extracting elements from paper.pdf using DocScalpel CLI...
+INFO - DocScalpel Configuration:
+INFO -   • Element types: figure,table
+INFO -   • Confidence threshold: 0.75
+INFO -   • Boundary padding: 10 pixels
+INFO -   • Max pages: 50
+INFO -   • Output directory: ./output/extracted
+```
+
 
 ### Prompt Templates
 
@@ -502,6 +549,40 @@ export OPENAI_API_KEY="sk-..."
 paperdeck generate paper.pdf --api-key sk-...
 ```
 
+**Issue: "Elements directory does not exist" when using --skip-extraction**
+
+```bash
+# Error: Elements directory does not exist: output/extracted
+# Solution 1: Run without --skip-extraction first to generate files
+paperdeck generate paper.pdf -o output/
+
+# Solution 2: Specify the correct directory path
+paperdeck generate paper.pdf --skip-extraction --elements-input-dir /path/to/extracted/
+
+# Solution 3: Use default directory (output/extracted)
+paperdeck generate paper.pdf --skip-extraction  # Uses output/extracted by default
+```
+
+**Issue: "No valid element files found" in elements directory**
+
+```bash
+# Check directory contents - looking for figure_##.pdf and table_##.pdf
+ls output/extracted/
+
+# Expected files: figure_01.pdf, figure_02.pdf, table_01.pdf, etc.
+# If files have different names, run extraction first:
+paperdeck generate paper.pdf -o output/
+```
+
+**Issue: Gaps in figure numbering warnings**
+
+This is informational only - generation will continue:
+```
+WARNING: Missing figure_02.pdf (found 01, 03)
+```
+
+The presentation will be generated with available figures (01, 03) and skip missing ones.
+
 **Issue: LaTeX compilation fails**
 
 PaperDeck includes automatic validation and error fixing. If compilation still fails:
@@ -536,12 +617,32 @@ Most structural errors (missing `\end{frame}`, `\end{column}`, etc.) are automat
 ## 📊 Performance
 
 Typical processing times on standard hardware:
-- PDF extraction: 5-10 seconds per paper
+
+**Normal Generation (with extraction):**
+- PDF text extraction: 2-5 seconds
+- Figure/table extraction: 30-40 seconds
 - AI processing: 10-30 seconds (depends on provider/model)
 - LaTeX generation: < 1 second
 - PDF compilation: 2-5 seconds
 
-Total: ~20-50 seconds per paper
+**Total:** ~45-80 seconds per paper
+
+**Fast Regeneration (skip extraction):**
+- PDF text extraction: 2-5 seconds
+- Figure/table loading: < 1 second (from pre-extracted files)
+- AI processing: 10-30 seconds
+- LaTeX generation: < 1 second
+- PDF compilation: 2-5 seconds
+
+**Total:** ~15-40 seconds per paper (up to **83% faster**)
+
+**When to use `--skip-extraction`:**
+- Iterating on prompt templates
+- Testing different themes
+- Trying different AI models/parameters
+- Any scenario where figures/tables haven't changed
+
+This dramatically speeds up the development workflow when refining presentations!
 
 ## 🔒 Security & Privacy
 

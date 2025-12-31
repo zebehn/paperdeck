@@ -15,11 +15,11 @@ from .models import ElementType
 class ExtractionConfiguration:
     """Configuration for DocScalpel PDF element extraction."""
 
-    confidence_threshold: float = 0.75
+    confidence_threshold: float = 0.5
     element_types: List[ElementType] = field(
         default_factory=lambda: [ElementType.FIGURE, ElementType.TABLE, ElementType.EQUATION]
     )
-    boundary_padding: int = 5
+    boundary_padding: int = 0
     max_pages: Optional[int] = None
     output_directory: Path = field(default_factory=lambda: Path("./extracted"))
     overwrite_existing: bool = False

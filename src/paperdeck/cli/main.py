@@ -4,15 +4,14 @@ This module provides the main CLI commands for generating presentations from
 research papers.
 """
 
-import sys
 import logging
 import os
+import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
-from ..core.config import AppConfiguration, AIServiceConfiguration, ExtractionConfiguration
+from ..core.config import AIServiceConfiguration, AppConfiguration, ExtractionConfiguration
 from ..core.exceptions import PaperDeckError
 from ..core.models import ElementType
 
@@ -97,22 +96,37 @@ def cli(ctx):
     type=click.Path(path_type=Path),
     help="Directory to save extracted elements (default: <output>/extracted)",
 )
+@click.option(
+    "--skip-extraction",
+    is_flag=True,
+    help="Skip element extraction and load from existing directory",
+)
+@click.option(
+    "--elements-input-dir",
+    type=click.Path(path_type=Path),
+    help=(
+        "Directory containing pre-extracted elements "
+        "(defaults to <output>/extracted when using --skip-extraction)"
+    ),
+)
 @click.pass_context
 def generate(
     ctx,
     pdf_path: Path,
-    output_path: Optional[Path],
+    output_path: Path | None,
     theme: str,
     prompt_name: str,
     provider: str,
-    model: Optional[str],
-    api_key: Optional[str],
+    model: str | None,
+    api_key: str | None,
     no_compile: bool,
     verbose: bool,
     extract_figures: bool,
     extract_tables: bool,
     extraction_confidence: float,
-    elements_output_dir: Optional[Path],
+    elements_output_dir: Path | None,
+    skip_extraction: bool,
+    elements_input_dir: Path | None,
 ):
     """Generate a presentation from a PDF research paper.
 
@@ -127,6 +141,40 @@ def generate(
     else:
         pdf_stem = pdf_path.stem  # Get filename without extension
         output_dir = Path(f"./{pdf_stem}")
+
+    # Validate skip-extraction options
+    if skip_extraction:
+        # Default to output_dir/extracted if not specified
+        if not elements_input_dir:
+            elements_input_dir = output_dir / "extracted"
+            if verbose:
+                click.echo(f"Using default elements directory: {elements_input_dir}")
+
+        # Validate directory exists
+        if not elements_input_dir.exists():
+            click.echo(
+                f"Error: Elements input directory does not exist: {elements_input_dir}",
+                err=True,
+            )
+            if elements_input_dir == output_dir / "extracted":
+                click.echo(
+                    "Hint: Run without --skip-extraction first to extract elements, "
+                    "or specify a custom --elements-input-dir",
+                    err=True,
+                )
+            sys.exit(1)
+        if not elements_input_dir.is_dir():
+            click.echo(f"Error: Path is not a directory: {elements_input_dir}", err=True)
+            sys.exit(1)
+        # When skipping extraction, ignore extraction control flags
+        if extract_figures is False or extract_tables is False:
+            click.echo(
+                "Warning: Ignoring --no-extract-figures/--no-extract-tables "
+                "because --skip-extraction is enabled",
+                err=True,
+            )
+        extract_figures = False
+        extract_tables = False
 
     # Configure AI service
     ai_config_kwargs = {"default_provider": provider}
@@ -154,7 +202,8 @@ def generate(
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)
         click.echo(
-            f"\nHint: Set API key via --api-key option or environment variable (OPENAI_API_KEY or ANTHROPIC_API_KEY)",
+            "\nHint: Set API key via --api-key option or environment variable "
+            "(OPENAI_API_KEY or ANTHROPIC_API_KEY)",
             err=True,
         )
         sys.exit(1)
@@ -221,14 +270,21 @@ def generate(
                 model=model,
                 compile_pdf=not no_compile,
                 progress_callback=lambda: bar.update(1),
+                skip_extraction=skip_extraction,
+                elements_input_dir=elements_input_dir,
             )
 
         # Display results
-        click.echo(f"\n✓ Presentation generated successfully!")
-        click.echo(f"  LaTeX file: {result['tex_path']}")
         if result.get("pdf_path"):
+            click.echo("\n✓ Presentation generated successfully!")
+            click.echo(f"  LaTeX file: {result['tex_path']}")
             click.echo(f"  PDF file: {result['pdf_path']}")
-        click.echo(f"  Slides: {result['slide_count']}")
+            click.echo(f"  Slides: {result['slide_count']}")
+        else:
+            click.echo("\n⚠ LaTeX generated but PDF compilation failed")
+            click.echo(f"  LaTeX file: {result['tex_path']}")
+            click.echo(f"  Slides: {result['slide_count']}")
+            click.echo("\nTip: Check the .log and .error.log files for compilation errors")
 
     except PaperDeckError as e:
         click.echo(f"\nError: {e}", err=True)
@@ -252,7 +308,7 @@ def generate(
     type=click.Path(exists=True, path_type=Path),
     help="Path to prompt library directory",
 )
-def list_prompts(library_path: Optional[Path]):
+def list_prompts(library_path: Path | None):
     """List available prompt templates."""
     from ..prompts.manager import PromptLibrary
 
@@ -269,7 +325,7 @@ def list_prompts(library_path: Optional[Path]):
             for name in ["default", "technical", "accessible", "pedagogical"]:
                 try:
                     library.get_template(name)
-                except:
+                except Exception:
                     pass
             templates = library.list_templates()
 

@@ -6,6 +6,13 @@
     "detail_level": "medium",
     "is_builtin": true
   },
+  "complete": {
+    "name": "complete",
+    "description": "Comprehensive presentation using ALL extracted figures and tables",
+    "style": "technical",
+    "detail_level": "high",
+    "is_builtin": true
+  },
   "technical": {
     "name": "technical",
     "description": "Detailed technical presentation for expert audiences",

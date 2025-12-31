@@ -6,6 +6,7 @@ to extract figures and tables from PDF papers.
 """
 
 import logging
+import subprocess
 import time
 from pathlib import Path
 
@@ -43,7 +44,7 @@ class DocScalpelAdapter:
     def __init__(self, config: ExtractionConfiguration | None = None):
         """Initialize DocScalpel adapter with optional configuration.
 
-        Attempts to import the DocScalpel library. If import fails, logs a warning
+        Checks if the DocScalpel CLI command is available. If not found, logs a warning
         and sets docscalpel_available to False, allowing graceful fallback.
 
         Args:
@@ -60,15 +61,25 @@ class DocScalpelAdapter:
         self.config = config
         self.docscalpel_available = False
 
-        # Try to import DocScalpel
+        # Check if docscalpel CLI is available
         try:
-            import docscalpel
-            self.docscalpel = docscalpel
-            self.docscalpel_available = True
-            logger.info("DocScalpel library loaded successfully")
-        except ImportError:
+            result = subprocess.run(
+                ['docscalpel', '--version'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                self.docscalpel_available = True
+                logger.info("DocScalpel CLI available")
+            else:
+                logger.warning(
+                    "DocScalpel CLI not found. Figure/table extraction will be skipped. "
+                    "Install with: pip install git+https://github.com/zebehn/docscalpel.git"
+                )
+        except (subprocess.TimeoutExpired, FileNotFoundError):
             logger.warning(
-                "DocScalpel not installed. Figure/table extraction will be skipped. "
+                "DocScalpel CLI not found. Figure/table extraction will be skipped. "
                 "Install with: pip install git+https://github.com/zebehn/docscalpel.git"
             )
 
@@ -133,38 +144,92 @@ class DocScalpelAdapter:
             logger.info("No element types enabled for extraction")
             return []
 
-        # Use DocScalpel to extract all elements at once
+        # Use DocScalpel CLI to extract elements
         start_time = time.perf_counter()
 
         try:
-            # Create DocScalpel configuration
-            docscalpel_config = self._create_docscalpel_config(element_types)
+            # Build types argument for CLI
+            types_str = ','.join(et.value for et in element_types)
 
-            # Extract elements using DocScalpel
-            logger.info(f"Extracting elements from {pdf_path.name} using DocScalpel...")
-            result = self.docscalpel.extract_elements(str(pdf_path), docscalpel_config)
+            # Ensure output directory exists
+            output_dir = self.config.output_directory if self.config else Path("extracted")
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Build CLI command
+            cmd = [
+                'docscalpel',
+                str(pdf_path),
+                '--types', types_str,
+                '--output', str(output_dir)
+            ]
+
+            # Get configuration values (with defaults)
+            confidence_threshold = self.config.confidence_threshold if self.config else 0.5
+            boundary_padding = self.config.boundary_padding if self.config else 0
+            max_pages = self.config.max_pages if self.config else None
+
+            # Add confidence threshold if configured
+            if self.config and self.config.confidence_threshold:
+                cmd.extend(['--confidence', str(self.config.confidence_threshold)])
+
+            # Add boundary padding if configured
+            if self.config and self.config.boundary_padding > 0:
+                cmd.extend(['--padding', str(self.config.boundary_padding)])
+
+            # Add max pages if configured
+            if self.config and self.config.max_pages:
+                cmd.extend(['--max-pages', str(self.config.max_pages)])
+
+            # Display extraction configuration to user
+            logger.info(f"Extracting elements from {pdf_path.name} using DocScalpel CLI...")
+            logger.info(f"DocScalpel Configuration:")
+            logger.info(f"  • Element types: {types_str}")
+            logger.info(f"  • Confidence threshold: {confidence_threshold}")
+            logger.info(f"  • Boundary padding: {boundary_padding} pixels")
+            if max_pages:
+                logger.info(f"  • Max pages: {max_pages}")
+            logger.info(f"  • Output directory: {output_dir}")
+            logger.debug(f"Full command: {' '.join(cmd)}")
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
 
             # Calculate total elapsed time
             elapsed = time.perf_counter() - start_time
 
-            # Check success flag and handle errors
-            if not result.success:
-                logger.error(f"DocScalpel extraction failed for {pdf_path.name}")
-                self._log_errors(result.errors)
+            # Check for errors
+            if result.returncode != 0:
+                logger.error(f"DocScalpel CLI extraction failed for {pdf_path.name}")
+                logger.error(f"Exit code: {result.returncode}")
+                if result.stderr:
+                    logger.error(f"Error output: {result.stderr}")
                 return []
 
-            # Log warnings if present (even on success)
-            if result.warnings:
-                self._log_warnings(result.warnings)
+            # Log output if available
+            if result.stdout:
+                logger.debug(f"DocScalpel output: {result.stdout}")
 
-            # Convert DocScalpel elements to PaperDeck elements
-            extracted = self._convert_elements(result.elements)
+            # Load extracted elements from output directory
+            extracted = self._load_extracted_elements(output_dir, element_types)
 
             # Log performance metrics
-            self._log_performance(pdf_path, result, elapsed)
+            logger.info(
+                f"Extraction completed for {pdf_path.name}: "
+                f"{len(extracted)} element(s) extracted in {elapsed:.2f}s"
+            )
 
             return extracted
 
+        except subprocess.TimeoutExpired:
+            elapsed = time.perf_counter() - start_time
+            logger.error(
+                f"DocScalpel CLI timed out for {pdf_path.name} (after {elapsed:.2f}s)"
+            )
+            return []
         except Exception as e:
             elapsed = time.perf_counter() - start_time
             logger.error(
@@ -174,136 +239,76 @@ class DocScalpelAdapter:
             )
             return []
 
-    def _create_docscalpel_config(self, element_types: list[ElementType]):
-        """Create DocScalpel ExtractionConfig from PaperDeck element types.
+    def _load_extracted_elements(
+        self, output_dir: Path, element_types: list[ElementType]
+    ) -> list[ExtractedElement]:
+        """Load extracted elements from output directory after CLI extraction.
+
+        Scans the output directory for extracted PDF files created by DocScalpel CLI
+        and creates ExtractedElement objects from them. Since the CLI doesn't provide
+        metadata like bounding boxes or page numbers, these fields use placeholder values.
 
         Args:
-            element_types: List of PaperDeck ElementType enums to extract
+            output_dir: Directory containing extracted PDF files (figure_##.pdf, table_##.pdf)
+            element_types: Types of elements that were extracted
 
         Returns:
-            DocScalpel ExtractionConfig object
-        """
-        # Map PaperDeck ElementType to DocScalpel ElementType
-        docscalpel_types = []
-        for elem_type in element_types:
-            if elem_type == ElementType.FIGURE:
-                docscalpel_types.append(self.docscalpel.ElementType.FIGURE)
-            elif elem_type == ElementType.TABLE:
-                docscalpel_types.append(self.docscalpel.ElementType.TABLE)
-            elif elem_type == ElementType.EQUATION:
-                docscalpel_types.append(self.docscalpel.ElementType.EQUATION)
+            List of ExtractedElement objects loaded from files
 
-        # Create configuration with our settings
-        config = self.docscalpel.ExtractionConfig(
-            element_types=docscalpel_types,
-            output_directory=str(self.config.output_directory) if self.config else ".",
-            confidence_threshold=self.config.confidence_threshold if self.config else 0.5,
-            naming_pattern="{type}_{counter:02d}.pdf",  # PDF format with zero-padded numbering
-            overwrite_existing=True,
-            max_pages=getattr(self.config, 'max_pages', None) if self.config else None,
-        )
-
-        return config
-
-    def _log_errors(self, errors: list) -> None:
-        """Log each error individually with enumeration.
-
-        Args:
-            errors: List of error messages from DocScalpel extraction
-        """
-        if not errors:
-            return
-
-        for i, error in enumerate(errors, 1):
-            logger.error(f"  Error [{i}/{len(errors)}]: {error}")
-
-    def _log_warnings(self, warnings: list) -> None:
-        """Log each warning individually with enumeration.
-
-        Args:
-            warnings: List of warning messages from DocScalpel extraction
-        """
-        if not warnings:
-            return
-
-        for i, warning in enumerate(warnings, 1):
-            logger.warning(f"  Warning [{i}/{len(warnings)}]: {warning}")
-
-    def _log_performance(self, pdf_path: Path, result, total_elapsed: float) -> None:
-        """Log extraction performance metrics and detect overhead.
-
-        Args:
-            pdf_path: Path to the PDF being processed
-            result: DocScalpel ExtractionResult with timing information
-            total_elapsed: Total elapsed time including adapter overhead
-        """
-        lib_time = result.extraction_time_seconds
-        overhead = total_elapsed - lib_time
-        overhead_pct = (overhead / total_elapsed * 100) if total_elapsed > 0 else 0
-
-        logger.info(
-            f"Extraction completed for {pdf_path.name}: "
-            f"{result.total_elements} element(s) in {lib_time:.2f}s "
-            f"(total: {total_elapsed:.2f}s, overhead: {overhead:.2f}s / {overhead_pct:.1f}%)"
-        )
-
-        # Warn if overhead is significant
-        if overhead > 2.0 or overhead_pct > 20:
-            logger.warning(
-                f"High adapter overhead detected: {overhead:.2f}s ({overhead_pct:.1f}%) "
-                f"for {pdf_path.name}"
-            )
-
-    def _convert_elements(self, docscalpel_elements: list) -> list[ExtractedElement]:
-        """Convert DocScalpel Element objects to PaperDeck ExtractedElement objects.
-
-        Args:
-            docscalpel_elements: List of DocScalpel Element objects
-
-        Returns:
-            List of PaperDeck ExtractedElement objects (FigureElement, TableElement, etc.)
+        Note:
+            CLI-extracted elements have limited metadata:
+            - page_number: Set to sequence_number (actual page unknown from CLI)
+            - bounding_box: Set to (0,0,0,0) (unknown)
+            - confidence_score: Set to 0.0 (unknown)
+            - sequence_number: Parsed from filename
         """
         from uuid import uuid4
 
-        from ..core.models import BoundingBox, EquationElement, FigureElement, TableElement
+        from ..core.models import BoundingBox, FigureElement, TableElement
 
-        converted = []
+        extracted = []
 
-        for ds_elem in docscalpel_elements:
-            # Map DocScalpel ElementType to PaperDeck ElementType
-            if ds_elem.element_type == self.docscalpel.ElementType.FIGURE:
-                paperdeck_type = ElementType.FIGURE
+        # Scan for each element type
+        for element_type in element_types:
+            if element_type == ElementType.FIGURE:
+                pattern = "figure_*.pdf"
                 element_class = FigureElement
-            elif ds_elem.element_type == self.docscalpel.ElementType.TABLE:
-                paperdeck_type = ElementType.TABLE
+            elif element_type == ElementType.TABLE:
+                pattern = "table_*.pdf"
                 element_class = TableElement
-            elif ds_elem.element_type == self.docscalpel.ElementType.EQUATION:
-                paperdeck_type = ElementType.EQUATION
-                element_class = EquationElement
             else:
-                logger.warning(f"Unknown element type: {ds_elem.element_type}")
                 continue
 
-            # Convert DocScalpel BoundingBox to PaperDeck BoundingBox
-            bbox = BoundingBox(
-                x=ds_elem.bounding_box.x,
-                y=ds_elem.bounding_box.y,
-                width=ds_elem.bounding_box.width,
-                height=ds_elem.bounding_box.height,
-            )
+            # Find all matching files
+            for file_path in sorted(output_dir.glob(pattern)):
+                # Parse sequence number from filename (e.g., "figure_01.pdf" -> 1)
+                try:
+                    # Extract number from filename like "figure_01.pdf"
+                    name_parts = file_path.stem.split('_')
+                    if len(name_parts) >= 2:
+                        sequence_num = int(name_parts[1])
+                    else:
+                        logger.warning(f"Could not parse sequence number from {file_path.name}")
+                        continue
+                except ValueError:
+                    logger.warning(f"Could not parse sequence number from {file_path.name}")
+                    continue
 
-            # Create PaperDeck element
-            element = element_class(
-                uuid=uuid4(),
-                element_type=paperdeck_type,
-                page_number=ds_elem.page_number,
-                bounding_box=bbox,
-                confidence_score=ds_elem.confidence_score,
-                sequence_number=ds_elem.sequence_number,
-                caption=None,  # DocScalpel doesn't extract captions yet
-                output_filename=Path(ds_elem.output_filename),  # Path to saved image
-            )
+                # Create element with minimal metadata
+                # Note: CLI doesn't provide bounding box, page number, or confidence
+                # We use placeholder values that indicate these are not available
+                element = element_class(
+                    uuid=uuid4(),
+                    element_type=element_type,
+                    page_number=sequence_num,  # Use sequence as page (actual page unknown from CLI)
+                    bounding_box=BoundingBox(x=0, y=0, width=0, height=0),  # Unknown
+                    confidence_score=0.0,  # Unknown from CLI output
+                    sequence_number=sequence_num,
+                    caption=None,
+                    output_filename=file_path,
+                )
 
-            converted.append(element)
+                extracted.append(element)
 
-        return converted
+        logger.debug(f"Loaded {len(extracted)} elements from {output_dir}")
+        return extracted

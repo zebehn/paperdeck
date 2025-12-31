@@ -36,6 +36,8 @@ def generate_presentation(
     model: Optional[str] = None,
     compile_pdf: bool = True,
     progress_callback: Optional[Callable] = None,
+    skip_extraction: bool = False,
+    elements_input_dir: Optional[Path] = None,
 ) -> Dict:
     """Generate presentation from PDF paper.
 
@@ -47,6 +49,8 @@ def generate_presentation(
         model: Specific model to use (optional)
         compile_pdf: Whether to compile LaTeX to PDF
         progress_callback: Optional callback for progress updates
+        skip_extraction: Whether to skip extraction and load pre-extracted elements
+        elements_input_dir: Directory containing pre-extracted elements (required if skip_extraction=True)
 
     Returns:
         Dict with results (tex_path, pdf_path, slide_count, etc.)
@@ -71,33 +75,61 @@ def generate_presentation(
     except Exception as e:
         raise ExtractionError(f"Failed to prepare paper: {e}")
 
-    # Step 1.5: Extract elements (figures, tables, equations) from PDF
+    # Step 1.5: Extract or load elements (figures, tables, equations)
     try:
-        extractor = PaperExtractor(
-            confidence_threshold=config.extraction_config.confidence_threshold,
-            output_directory=config.extraction_config.output_directory,
-            extraction_config=config.extraction_config,
-        )
+        if skip_extraction:
+            # NEW: Load pre-extracted elements from directory
+            logger.info(f"Skipping extraction, loading pre-extracted elements from {elements_input_dir}")
 
-        # Extract elements (figures, tables, equations)
-        elements = extractor.extract(
-            paper_path=pdf_path,
-            element_types=config.extraction_config.element_types,
-        )
+            # Import the new loader
+            from ..extraction.element_loader import ElementLoader
 
-        # Add elements to paper
-        paper.extracted_elements = elements  # Use the new field from Phase 5
+            # Validate directory before loading
+            loader = ElementLoader(elements_input_dir)
+            is_valid, errors = loader.validate_directory()
+            if not is_valid:
+                error_msg = "Invalid elements directory:\n" + "\n".join(f"  - {e}" for e in errors)
+                raise ExtractionError(error_msg)
+
+            # Load pre-extracted elements
+            elements = loader.load_elements(
+                element_types=config.extraction_config.element_types,
+            )
+
+            if not elements:
+                logger.warning(f"No elements loaded from {elements_input_dir}")
+            else:
+                logger.info(f"Loaded {len(elements)} pre-extracted element(s)")
+
+            # Add elements to paper
+            paper.extracted_elements = elements
+
+        else:
+            # EXISTING: Extract elements from PDF using DocScalpel
+            logger.info(f"Extracting elements from PDF using DocScalpel")
+
+            extractor = PaperExtractor(
+                confidence_threshold=config.extraction_config.confidence_threshold,
+                output_directory=config.extraction_config.output_directory,
+                extraction_config=config.extraction_config,
+            )
+
+            # Extract elements (figures, tables, equations)
+            elements = extractor.extract(
+                paper_path=pdf_path,
+                element_types=config.extraction_config.element_types,
+            )
+
+            # Add elements to paper
+            paper.extracted_elements = elements  # Use the new field from Phase 5
 
         progress()
 
     except Exception as e:
-        raise ExtractionError(f"Failed to extract elements from PDF: {e}")
+        raise ExtractionError(f"Failed to {'load' if skip_extraction else 'extract'} elements: {e}")
 
     # Step 2: Generate LaTeX using AI
     try:
-        import logging
-        logger = logging.getLogger(__name__)
-
         logger.info("Generating presentation using AI...")
 
         # Call AI to generate complete LaTeX document
@@ -182,7 +214,13 @@ def generate_presentation(
 
                 except Exception as overfull_error:
                     logger.warning(f"Overfull fixing failed: {overfull_error}")
-                    logger.info("PDF compiled but may have layout issues")
+                    # Overfull fixing may have corrupted the LaTeX, so PDF might not exist
+                    # Check if PDF still exists, if not set to None
+                    if pdf_output_path and not pdf_output_path.exists():
+                        logger.error("PDF was deleted during failed overfull fixing attempt")
+                        pdf_output_path = None
+                    else:
+                        logger.info("PDF compiled but may have layout issues")
             else:
                 logger.info("✅ No overfull warnings - layout looks good!")
 

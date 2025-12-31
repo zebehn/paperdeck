@@ -82,7 +82,10 @@ To generate the presentation:
            \end{{itemize}}
          \end{{column}}
          \begin{{column}}{{0.55\\textwidth}}
-           \includegraphics[width=\textwidth, keepaspectratio]{{extracted/table_02.pdf}}
+           \begin{{figure}}
+             \includegraphics[width=\textwidth, keepaspectratio]{{extracted/table_02.pdf}}
+             \caption{{Table 2 (p.5) shows quantitative benchmark results across five datasets}}
+           \end{{figure}}
          \end{{column}}
        \end{{columns}}
      \end{{frame}}
@@ -114,7 +117,19 @@ To generate the presentation:
         - **Significance**: Why this result matters or what it implies
         - **Insights**: Any analysis, interpretation, or explanation provided by the authors
 
-     3. **Slide Layout with Discussions**:
+     3. **Add Figure/Table Captions (MANDATORY)**:
+        - **Every figure and table MUST have a `\caption{{}}` tag**
+        - Place the image/table inside a `\begin{{figure}}...\end{{figure}}` block
+        - Add caption immediately after `\includegraphics`
+        - Caption format: "Figure/Table X (p.Y) [direct description from paper]"
+        - Examples:
+          * `\caption{{Figure 10 (p.16) shows examples from RoboCasa and DROID}}`
+          * `\caption{{Figure 11 (p.20) visualizes evaluation configurations across seen/new environments}}`
+          * `\caption{{Table 2 (p.5) presents quantitative benchmark results on five datasets}}`
+        - Extract caption text directly from paper's figure/table mentions
+        - Keep captions concise (1-2 sentences maximum)
+
+     4. **Slide Layout with Discussions and Caption**:
         ```latex
         \begin{{frame}}
           \frametitle{{Results: Performance Comparison (Figure 3)}}
@@ -128,7 +143,10 @@ To generate the presentation:
               \end{{itemize}}
             \end{{column}}
             \begin{{column}}{{0.5\\textwidth}}
-              \includegraphics[width=0.9\columnwidth, keepaspectratio]{{extracted/figure_03.pdf}}
+              \begin{{figure}}
+                \includegraphics[width=0.9\columnwidth, keepaspectratio]{{extracted/figure_03.pdf}}
+                \caption{{Figure 3 (p.7) compares performance across different methods on benchmark datasets}}
+              \end{{figure}}
             \end{{column}}
           \end{{columns}}
         \end{{frame}}
@@ -208,7 +226,8 @@ To generate the presentation:
    - **Quality Guidelines:**
      - Scale images to fit slides (e.g., use \includegraphics[width=0.7\textwidth, keepaspectratio]{{extracted/figure_01.pdf}})
      - **IMPORTANT**: All figure/table files are PDFs in the "extracted/" subdirectory with zero-padded numbering, so always use paths like extracted/figure_01.pdf, extracted/figure_02.pdf, extracted/table_01.pdf, etc.
-     - Add captions matching the paper's descriptions for context
+     - **MANDATORY**: Every figure/table MUST have a `\caption{{}}` tag with direct description from paper
+     - Wrap images in `\begin{{figure}}...\end{{figure}}` blocks to enable captions
      - Reference figure/table numbers in the text (e.g., "As shown in Figure 3...")
 
    - **Verification Checklist (BEFORE GENERATING OUTPUT):**
@@ -222,8 +241,10 @@ To generate the presentation:
      - [ ] Ensure every extracted element adds meaningful content to the presentation
      - [ ] **CRITICAL**: Verify each figure slide has 3-5 discussion bullets from the paper
      - [ ] **CRITICAL**: Verify each TABLE slide has 3-5 discussion bullets from the paper
+     - [ ] **CRITICAL**: Verify each figure/table has a `\caption{{}}` tag with direct description
      - [ ] Confirm bullets are extracted from actual paper text, not invented
      - [ ] Check that discussions explain what the visual shows and its significance
+     - [ ] Verify all images are wrapped in `\begin{{figure}}...\end{{figure}}` blocks
 
    **Example: If you have figure_01.pdf through figure_08.pdf and table_01.pdf through table_03.pdf:**
    - You MUST have 8 slides featuring figures (one slide per figure)
@@ -385,12 +406,14 @@ To generate the presentation:
    9. **CRITICAL**: Does each figure slide have 3-5 discussion bullets from the paper?
    10. **CRITICAL**: Does each TABLE slide have 3-5 discussion bullets from the paper?
    11. **CRITICAL**: Are the discussion bullets extracted from actual paper text (not invented)?
-   12. **CRITICAL**: Search for `\scriptsize` before `\begin{{itemize}}` - if found, change to `\small` or remove!
-   13. **CRITICAL**: Check for content-heavy frames - have you split overflowing content into multiple slides?
-   14. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
-   15. **CRITICAL - SYNTAX VALIDATION**: Search for HTML closing tags like `</end{...}>` - these are WRONG!
-   16. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{column}>`)
-   17. **CRITICAL - SYNTAX VALIDATION**: Check that every `\end{{column}}` appears BEFORE the next `\begin{{column}}` in two-column layouts
+   12. **CRITICAL**: Does each figure/table have a `\caption{{}}` tag with description from paper?
+   13. **CRITICAL**: Are all figures/tables wrapped in `\begin{{figure}}...\end{{figure}}` blocks?
+   14. **CRITICAL**: Search for `\scriptsize` before `\begin{{itemize}}` - if found, change to `\small` or remove!
+   15. **CRITICAL**: Check for content-heavy frames - have you split overflowing content into multiple slides?
+   16. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
+   17. **CRITICAL - SYNTAX VALIDATION**: Search for HTML closing tags like `</end{...}>` - these are WRONG!
+   18. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{column}}` not `</end{column}>`)
+   19. **CRITICAL - SYNTAX VALIDATION**: Check that every `\end{{column}}` appears BEFORE the next `\begin{{column}}` in two-column layouts
 
    **If any count doesn't match, tables are missing, or HTML syntax found, FIX IT before generating output!**
 
@@ -404,9 +427,11 @@ To generate the presentation:
 1. Your presentation MUST include every single extracted figure and table - do not leave any out!
 2. Each figure/table slide MUST have 3-5 discussion bullets extracted from the paper's text
 3. Discussion bullets must be factual content from the paper, not invented interpretations
-4. **NEVER use `\scriptsize` before `\begin{{itemize}}`** - use `\small` or no size modifier
-5. **Split overflowing content into multiple slides** - never force too much content into one slide
-6. **LATEX SYNTAX ONLY**: Use `\end{{column}}` NOT `</end{column}>` - no HTML/XML syntax!
-7. **VERIFY TAG BALANCE**: Count all begin/end pairs - they MUST match exactly (same number of each)
+4. **MANDATORY CAPTIONS**: Every figure/table MUST have `\caption{{}}` with direct description from paper
+5. **Wrap all images** in `\begin{{figure}}...\end{{figure}}` blocks to enable captions
+6. **NEVER use `\scriptsize` before `\begin{{itemize}}`** - use `\small` or no size modifier
+7. **Split overflowing content into multiple slides** - never force too much content into one slide
+8. **LATEX SYNTAX ONLY**: Use `\end{{column}}` NOT `</end{column}>` - no HTML/XML syntax!
+9. **VERIFY TAG BALANCE**: Count all begin/end pairs - they MUST match exactly (same number of each)
 
 Now, using the provided research paper PDF and extracted image files, generate the LaTeX presentation code following all the guidelines above.

@@ -1,0 +1,451 @@
+You are an expert in creating LaTeX presentations using the Beamer package. Your task is to generate a complete LaTeX document for a slide-based presentation that summarizes a given research paper. The input will include:
+
+- A PDF file of the research paper (named, e.g., "paper.pdf").
+- A set of PDF files extracted from the paper, where each figure or table is saved as a PDF file with zero-padded numbering (e.g., "figure_01.pdf" for Fig. 1, "figure_02.pdf" for Fig. 2, "table_01.pdf" for Table 1).
+
+To generate the presentation:
+
+1. **Extract Key Information from the PDF:**
+   - Read the PDF to identify the title, authors (list main authors first, then et al. if many), institutions/affiliations, publication venue (conference or journal name), year.
+   - Identify the main sections of the paper, such as Abstract, Introduction, Related Work, Methodology, Experiments, Results, Discussion, Conclusion, etc.
+   - Map the paper's content to the following structured slide categories, adapting the overall structure rigorously to the paper's characteristics (e.g., if the paper has no explicit "limitations" section, infer or combine from Discussion/Conclusion; if it emphasizes certain aspects like novel algorithms, dedicate more slides to them):
+     - Research Area/Background
+     - Goal of the Research
+     - State-of-the-Art (SOTA) Technologies and Their Limitations
+     - Research Motivation
+     - Problem Definition
+     - Proposed Method and Technologies
+     - Experimental Design
+     - Datasets Used
+     - Experimental Results and Analysis
+     - Conclusion
+     - Limitations and Future Work
+   - For each category, extract concise bullet points, key sentences, or summaries from the relevant paper sections. Keep summaries factual and objective, avoiding additions or interpretations not in the paper.
+   - Locate references to figures and tables in the paper and note their descriptions/captions for inclusion.
+
+2. **Handle Figures and Tables (CRITICAL - DISCUSSION THEN ELEMENT):**
+
+   **⚠️ MANDATORY: Each extracted figure AND table MUST get its own dedicated slide!**
+
+   **⚠️ TABLES ARE AS IMPORTANT AS FIGURES - DO NOT NEGLECT TABLES!**
+
+   - **DISCUSSION-THEN-ELEMENT STRATEGY:**
+     - **CRITICAL**: Create TWO slides for EACH extracted element: (1) Discussion slide, (2) Element slide
+     - **CRITICAL**: If you have 10 figures and 3 tables extracted, you MUST have 26 slides (10×2 figure slides + 3×2 table slides)
+     - **CRITICAL**: Tables often contain the most important quantitative results - they MUST be included
+     - **CRITICAL**: Element slides are placed IN THE CONTENT FLOW where they're relevant (not all grouped at the end)
+     - This strategy ensures maximum clarity: discuss first, then show the visual
+     - Each element gets full slide space with NO layout complexity
+
+   - **TWO-SLIDE PATTERN FOR EACH ELEMENT:**
+
+     **Slide 1: Discussion Slide (PRECEDES the element)**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{[Category]: [Description]}}
+       \begin{{itemize}}
+         \item Discussion point 1 from paper
+         \item Discussion point 2 from paper
+         \item Discussion point 3 from paper
+         \item Discussion point 4 from paper
+         \item Discussion point 5 from paper (optional)
+       \end{{itemize}}
+     \end{{frame}}
+     ```
+
+     **Slide 2: Element Slide (FOLLOWS the discussion)**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Figure/Table X}}
+       \centering
+       \includegraphics[width=0.9\textwidth, height=0.75\textheight, keepaspectratio]{{extracted/figure_XX.pdf}}
+       \small
+       \captionof{{figure}}{{[Description from paper] (p.Y)}}
+     \end{{frame}}
+     ```
+
+   - **Figure Example (TWO slides):**
+
+     **Slide 1 - Discussion:**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Architecture Overview}}
+       \begin{{itemize}}
+         \item Three-stage pipeline: encoder, transformer, decoder
+         \item Encoder processes raw input with convolutional layers
+         \item Transformer handles sequence modeling with self-attention
+         \item Skip connections (dashed lines) preserve low-level features
+         \item End-to-end trainable with single loss function
+       \end{{itemize}}
+     \end{{frame}}
+     ```
+
+     **Slide 2 - Figure:**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Figure 1}}
+       \centering
+       \includegraphics[width=0.9\textwidth, height=0.75\textheight, keepaspectratio]{{extracted/figure_01.pdf}}
+       \small
+       \captionof{{figure}}{{Proposed architecture with three main components (p.3)}}
+     \end{{frame}}
+     ```
+
+   - **Table Example (TWO slides):**
+
+     **Slide 1 - Discussion:**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Benchmark Results}}
+       \begin{{itemize}}
+         \item Our method achieves best results on 4/5 datasets
+         \item Average improvement of 3.2\% over prior SOTA
+         \item COCO: 45.6 mAP (+3.2), Pascal: 82.1 (+2.8)
+         \item Maintains competitive speed (28 FPS)
+         \item Demonstrates broad applicability across domains
+       \end{{itemize}}
+     \end{{frame}}
+     ```
+
+     **Slide 2 - Table:**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Table 2}}
+       \centering
+       \includegraphics[width=0.95\textwidth, height=0.75\textheight, keepaspectratio]{{extracted/table_02.pdf}}
+       \small
+       \captionof{{table}}{{Quantitative benchmark results across five datasets (p.5)}}
+     \end{{frame}}
+     ```
+
+   - **Placement in Content Flow (CRITICAL):**
+
+     **⚠️ MANDATORY: Place figure/table slide pairs WHERE THEY'RE RELEVANT in the content flow!**
+
+     - **DO NOT group all figures/tables at the end** - integrate them into the presentation flow
+     - **Architecture figures**: Place after "Proposed Method" content slides
+     - **Result figures/tables**: Place after "Experimental Design" or within "Results" section
+     - **Comparison tables**: Place in "Results" section where comparisons are discussed
+     - **Ablation tables**: Place in "Results" or "Analysis" section
+     - **Example flow**: Intro → Background → Problem → Method → [Method Figure 1 discussion + figure] → Experiments → [Results Table 1 discussion + table] → [Results Figure 2 discussion + figure] → Conclusion
+
+   - **Discussion Slide Requirements (CRITICAL - SLIDE 1 OF PAIR):**
+
+     **⚠️ MANDATORY: Each element must have a SEPARATE discussion slide that PRECEDES it!**
+
+     For every figure and table, create a discussion slide (Slide 1) that:
+
+     1. **Extract Paper Discussions**: Carefully read the paper sections where the figure/table is referenced
+        - Find the paragraph(s) that discuss, analyze, or interpret the figure/table
+        - Identify key insights, observations, comparisons, or conclusions related to the visual
+        - Look for phrases like "As shown in Figure X...", "Table Y demonstrates...", "From Figure Z, we observe..."
+
+     2. **Create Contextual Bullets**: Convert these discussions into 3-5 concise bullet points
+        - **What it shows**: Brief description of what the figure/table depicts
+        - **Key findings**: Main observations or results highlighted by the authors
+        - **Comparisons**: How it compares to baselines, prior work, or other conditions
+        - **Significance**: Why this result matters or what it implies
+        - **Insights**: Any analysis, interpretation, or explanation provided by the authors
+
+     3. **Slide Title**: Use a descriptive title WITHOUT mentioning the figure/table number
+        - Good: "Architecture Overview", "Benchmark Results", "Ablation Study"
+        - Bad: "Figure 1", "Table 2" (these are for the element slide, not discussion slide)
+
+   - **Element Slide Requirements (CRITICAL - SLIDE 2 OF PAIR):**
+
+     **⚠️ MANDATORY: Each element gets its own slide with ONLY the visual (no bullets)!**
+
+     For every figure and table, create an element slide (Slide 2) that:
+
+     1. **Add Caption (MANDATORY - BEAMER SYNTAX)**:
+        - **Every figure and table MUST have a caption using `\captionof{{figure}}{{}}` or `\captionof{{table}}{{}}` **
+        - **CRITICAL**: In Beamer, DO NOT use `\begin{{figure}}...\end{{figure}}` blocks inside frames!
+        - **CORRECT Beamer syntax**: Use `\captionof{{figure}}{{}}` directly after `\includegraphics`
+        - **Required package**: The caption package is loaded (do not add it again)
+        - **Caption format (IMPORTANT)**: Do NOT include "Figure X" or "Table X" in the caption text - `\captionof` adds this automatically!
+        - **Correct format**: "[Direct description from paper] (p.Y)"
+        - **Examples**:
+          * `\captionof{{figure}}{{Overview of the system architecture showing three main components (p.3)}}`
+          * `\captionof{{table}}{{Quantitative benchmark results across five datasets (p.5)}}`
+          * `\captionof{{figure}}{{Performance comparison between proposed method and baselines (p.8)}}`
+        - **WRONG (redundant)**: `\captionof{{figure}}{{Figure 1 (p.3) shows the architecture}}` → renders as "Figure: Figure 1 (p.3)..."
+        - **CORRECT**: `\captionof{{figure}}{{System architecture with three main components (p.3)}}` → renders as "Figure: System architecture..."
+        - Extract caption text directly from paper's figure/table descriptions
+        - Keep captions concise (1-2 sentences maximum)
+
+     2. **Slide Title**: Use "Figure X" or "Table X" as the title (simple and clear)
+
+     3. **Layout**: Center the element with maximum size
+        - Use `\centering` before `\includegraphics`
+        - **Figures**: Use `width=0.9\textwidth, height=0.75\textheight, keepaspectratio` for maximum visibility
+        - **Tables**: Use `width=0.95\textwidth, height=0.75\textheight, keepaspectratio` (tables often need more width)
+        - Add `\small` before `\captionof` to make caption text smaller
+        - No bullets, no columns, just the element and caption
+
+   - **Discussion Extraction Examples**:
+
+     **Example 1 - Result Figure (TWO SLIDES):**
+
+     Paper text: "Figure 5 shows the accuracy comparison across different architectures. Our proposed method (blue line) consistently outperforms the baseline (red line) by an average of 12.3%. The improvement is most pronounced in scenarios with limited training data (left panel), where our method achieves 18% higher accuracy."
+
+     **Slide 1 (Discussion):**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Performance Comparison}}
+       \begin{{itemize}}
+         \item Our method (blue) outperforms baseline (red) by 12.3\% on average
+         \item Most significant gain with limited training data: 18\% improvement
+         \item Performance advantage consistent across all architectures
+         \item Results demonstrate robustness of proposed approach
+       \end{{itemize}}
+     \end{{frame}}
+     ```
+
+     **Slide 2 (Figure):**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Figure 5}}
+       \centering
+       \includegraphics[width=0.9\textwidth, height=0.75\textheight, keepaspectratio]{{extracted/figure_05.pdf}}
+       \small
+       \captionof{{figure}}{{Accuracy comparison across different architectures (p.8)}}
+     \end{{frame}}
+     ```
+
+     **Example 2 - Comparison Table (TWO SLIDES):**
+
+     Paper text: "Table 2 presents quantitative results on benchmark datasets. Our method achieves state-of-the-art performance on 4 out of 5 datasets, with particularly strong results on COCO (+3.2 mAP) and Pascal VOC (+2.8 mAP)."
+
+     **Slide 1 (Discussion):**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Benchmark Results}}
+       \begin{{itemize}}
+         \item State-of-the-art on 4/5 benchmark datasets
+         \item COCO: +3.2 mAP improvement (leading result)
+         \item Pascal VOC: +2.8 mAP improvement
+         \item Competitive on Cityscapes (within 0.3 mAP of best)
+         \item Demonstrates broad applicability across domains
+       \end{{itemize}}
+     \end{{frame}}
+     ```
+
+     **Slide 2 (Table):**
+     ```latex
+     \begin{{frame}}
+       \frametitle{{Table 2}}
+       \centering
+       \includegraphics[width=0.95\textwidth, height=0.75\textheight, keepaspectratio]{{extracted/table_02.pdf}}
+       \small
+       \captionof{{table}}{{Quantitative benchmark results on five datasets (p.5)}}
+     \end{{frame}}
+     ```
+
+   - **Verification Before Output**:
+     - [ ] Every figure/table has TWO slides: (1) discussion, (2) element
+     - [ ] Discussion slide comes BEFORE element slide
+     - [ ] Discussion slide has 3-5 contextual bullets from the paper
+     - [ ] Element slide has ONLY the visual + caption (no bullets)
+     - [ ] Bullets reflect actual paper discussions, not invented content
+     - [ ] Element slides are placed in the content flow where relevant
+
+   - **Special Instructions for Tables (CRITICAL):**
+
+     **⚠️ TABLES CONTAIN KEY QUANTITATIVE RESULTS - NEVER SKIP THEM!**
+
+     Tables are often the most important part of a research paper as they contain:
+     - Quantitative performance comparisons
+     - Ablation study results
+     - Benchmark evaluations
+     - Statistical significance tests
+     - Comprehensive experimental data
+
+     **For EACH table file (table_01.pdf, table_02.pdf, etc.), you MUST:**
+     1. Create a dedicated slide with ONLY that table
+     2. Add 3-5 discussion bullets explaining:
+        - What metrics/comparisons the table shows
+        - Key findings (which method performs best, by how much)
+        - Significant differences or patterns
+        - What the results demonstrate or prove
+     3. Use two-column layout: bullets on left (45%), table on right (55%)
+     4. Reference the table number in the slide title (e.g., "Quantitative Results (Table 2)")
+
+   - **Quality Guidelines:**
+     - **Figure sizing**: Use `width=0.9\textwidth, height=0.75\textheight, keepaspectratio` for maximum visibility
+     - **Table sizing**: Use `width=0.95\textwidth, height=0.75\textheight, keepaspectratio` (tables often need more width)
+     - **Caption font**: Add `\small` before `\captionof` to make caption text smaller
+     - **All figure/table files are PDFs** in the "extracted/" subdirectory with zero-padded numbering
+     - Always use paths like `extracted/figure_01.pdf`, `extracted/table_01.pdf`, etc.
+     - **MANDATORY**: Every figure/table MUST have a `\captionof{{}}` tag with direct description from paper
+     - Discussion slide title should be descriptive (e.g., "Performance Comparison")
+     - Element slide title should be simple (e.g., "Figure 5", "Table 2")
+
+   - **Verification Checklist (BEFORE GENERATING OUTPUT):**
+     - [ ] List all extracted files mentioned in the paper content
+     - [ ] **CRITICAL**: Count figure files (figure_01.pdf, figure_02.pdf, ...) - each must get TWO slides (discussion + element)
+     - [ ] **CRITICAL**: Count table files (table_01.pdf, table_02.pdf, ...) - each must get TWO slides (discussion + element)
+     - [ ] Verify you have 2× the number of extracted files in element-related slides
+     - [ ] **CRITICAL**: Verify each element has a discussion slide with 3-5 bullets
+     - [ ] **CRITICAL**: Verify discussion slide PRECEDES element slide for each pair
+     - [ ] **CRITICAL**: Verify element slide has ONLY visual + caption (no bullets)
+     - [ ] **CRITICAL**: Verify each figure/table has a `\captionof{{}}` tag with direct description
+     - [ ] Confirm bullets are extracted from actual paper text, not invented
+     - [ ] Check that element slides are integrated into content flow (not all at the end)
+
+   **Example: If you have figure_01.pdf through figure_08.pdf and table_01.pdf through table_03.pdf:**
+   - You MUST have 8 × 2 = **16 figure-related slides** (8 discussion + 8 element)
+   - You MUST have 3 × 2 = **6 table-related slides** (3 discussion + 3 element)
+   - TOTAL: 22 element-related slides
+   - Pattern: Discussion slide → Element slide (repeat for each element)
+   - Integrate these pairs into the content flow where relevant
+
+3. **LaTeX Structure Guidelines:**
+   - **LaTeX Syntax Only (CRITICAL):** Use ONLY LaTeX commands (e.g., \begin{{frame}}, \end{{column}}). NEVER use HTML/XML syntax (e.g., <tag>, </tag>). All LaTeX commands must start with backslash \.
+
+     **⚠️ CRITICAL: The following are WRONG and will break compilation:**
+     ```
+     ❌ </end{{column}}>        (HTML closing tag)
+     ❌ <end{{column}}>          (HTML tag)
+     ❌ \begin<column>           (Wrong bracket type)
+     ❌ /end{{column}}           (Wrong slash direction)
+     ```
+
+     **✅ CORRECT LaTeX syntax:**
+     ```
+     ✅ \end{{column}}           (Backslash + end + curly braces)
+     ✅ \begin{{column}}{{0.45\\textwidth}}
+     ✅ \end{{frame}}
+     ✅ \end{{itemize}}
+     ```
+
+     **Before outputting, search your entire code for:**
+     - Any `<` or `>` characters (except in comments or text)
+     - Any `</end{...}>` patterns (HTML syntax)
+     - Any closing tags that don't start with backslash `\`
+   - Use the Beamer document class: \documentclass{{beamer}}.
+   - Include necessary packages: \usepackage{{graphicx}} for images, \usepackage{{amsmath}} for math, \usepackage{{caption}} for captions (REQUIRED for \captionof command), \usepackage{{biblatex}} if needed for citations (but keep bibliography simple).
+   - Theme: Use a clean theme like \usetheme{{Madrid}} or similar for readability.
+   - Title Slide: Include the paper's title, authors, institutions, venue, year.
+   - Citation Slide: Immediately after the title slide, create a dedicated slide with full citation details (e.g., in APA or Chicago format).
+   - Content Slides:
+     - Use \frame{{}} or \begin{{frame}} for each slide.
+     - Structure with \frametitle{{}} for slide titles.
+     - Use itemize or enumerate for bullet points.
+     - Limit content per slide: 3-6 bullets max, with short phrases.
+     - For discussion slides: use itemize with 3-5 bullets
+     - For element slides: use \centering with \includegraphics and \captionof (NO bullets)
+   - Escape Special Characters:
+     - Replace arrows like "→" with \rightarrow in math mode ($ \rightarrow $).
+     - Escape inequalities like "<" as $<$ in math mode ($<$).
+     - Use \$ for inline math, \begin{{equation}} for display math.
+     - Handle other LaTeX reserved characters (e.g., \& for &, \% for %, etc.).
+   - Structure:
+     - Title slide
+     - Citation slide
+     - Content slides (introduction, motivation, problem)
+     - Method content slides
+     - **For each method figure**: Discussion slide → Figure slide
+     - Experimental design content slides
+     - **For each result figure/table**: Discussion slide → Element slide
+     - Conclusion content slides
+     - End with a "Thank You" or Q&A slide
+     - **CRITICAL**: Integrate element slide pairs into content flow, not all grouped at end
+
+4. **LaTeX Structure Best Practices (CRITICAL - Prevent Compilation Errors):**
+
+   **EVERY \begin{...} MUST have a matching \end{...} tag!**
+
+   **✓ CORRECT Example - Discussion Slide:**
+   ```latex
+   \begin{{frame}}
+     \frametitle{{Architecture Overview}}
+     \begin{{itemize}}
+       \item Three-stage pipeline with encoder, transformer, decoder
+       \item Encoder uses convolutional layers for feature extraction
+       \item Transformer applies self-attention for sequence modeling
+       \item Skip connections preserve low-level features
+     \end{{itemize}}
+   \end{{frame}}
+   ```
+
+   **✓ CORRECT Example - Element Slide:**
+   ```latex
+   \begin{{frame}}
+     \frametitle{{Figure 1}}
+     \centering
+     \includegraphics[width=0.9\textwidth, height=0.75\textheight, keepaspectratio]{{extracted/figure_01.pdf}}
+     \small
+     \captionof{{figure}}{{Proposed architecture with encoder, transformer, and decoder (p.2)}}
+   \end{{frame}}
+   ```
+
+   **⚠️ Common Errors That WILL Break Compilation:**
+   - Missing \end{{frame}} - Every frame MUST be closed
+   - Missing \end{{column}} - Every column MUST be closed before starting the next
+   - Missing \end{{columns}} - The columns environment MUST be closed
+   - Missing \end{{itemize}} or \end{{enumerate}} - Lists MUST be closed
+   - Duplicate \begin{{column}} without closing previous column
+   - **HTML/XML syntax** (e.g., </end{{column}}>) - Use LaTeX syntax only (\end{{column}})
+   - Wrong closing tags (e.g., /end{{column}} or <end{{column}}>) - Must start with backslash \
+
+   **✓ Pre-Generation Checklist (VERIFY BEFORE OUTPUT):**
+   1. Count all \begin{{frame}} - do you have equal \end{{frame}}?
+   2. Count all \begin{{itemize}} - do you have equal \end{{itemize}}?
+   3. Count all \begin{{enumerate}} - do you have equal \end{{enumerate}}?
+   4. Is every frame properly closed with \end{{frame}} before starting a new frame?
+   5. **CRITICAL**: Count extracted figure files - each must have TWO slides (discussion + element)
+   6. **CRITICAL**: Count extracted table files - each must have TWO slides (discussion + element)
+   7. **CRITICAL**: Does each figure/table have a SEPARATE discussion slide that PRECEDES it?
+   8. **CRITICAL**: Does each discussion slide have 3-5 bullets from the paper?
+   9. **CRITICAL**: Does each element slide have ONLY visual + caption (NO bullets)?
+   10. **CRITICAL**: Are the discussion bullets extracted from actual paper text (not invented)?
+   11. **CRITICAL - BEAMER CAPTIONS**: Does each figure/table have `\captionof{{figure}}{{}}` or `\captionof{{table}}{{}}` with description from paper?
+   12. **CRITICAL - BEAMER CAPTIONS**: Are you using `\captionof` NOT `\begin{{figure}}...\end{{figure}}` blocks inside frames?
+   13. **CRITICAL - PLACEMENT**: Are element slide pairs integrated into content flow (not all at the end)?
+   14. **CRITICAL - SYNTAX VALIDATION**: Search your ENTIRE code for `<` or `>` characters (except in text content)
+   15. **CRITICAL - SYNTAX VALIDATION**: Search for HTML closing tags like `</end{...}>` - these are WRONG!
+   16. **CRITICAL - SYNTAX VALIDATION**: Verify ALL closing tags start with backslash `\` (e.g., `\end{{itemize}}` not `</end{itemize}>`)
+   17. **CRITICAL - TYPO CHECK**: Search for incomplete closing tags - always use `\end{{...}}`
+   18. **CRITICAL - TYPO CHECK**: Search for wrong tags like `\begin{{itemize}}` appearing where `\end{{itemize}}` should be
+
+   **If any count doesn't match or HTML syntax found, FIX IT before generating output!**
+
+5. **Sizing Guidelines (Simplified for Full-Slide Elements):**
+   - **Figures**: Use `width=0.9\textwidth, height=0.75\textheight, keepaspectratio` for maximum visibility
+   - **Tables**: Use `width=0.95\textwidth, height=0.75\textheight, keepaspectratio` (tables often need more width)
+   - **Caption font**: Add `\small` before `\captionof` to make caption text smaller and save space
+   - **Discussion slides**: Limit to 5-6 bullet points maximum
+   - **Font Size**: Use default font size for itemize (no size modifiers needed in most cases)
+   - **If content doesn't fit**: Reduce to 3-4 bullets or use `\small` before `\begin{{itemize}}`
+   - **NEVER use `\scriptsize`** before itemize - it breaks font hierarchy!
+   - **Element slides are simple**: Just \centering + \includegraphics + \small + \captionof (no columns, no bullets)
+
+6. **Output Format:**
+   - Generate the full LaTeX code as a single .tex file content.
+   - Ensure the code is compilable (assume images are in the "extracted/" subdirectory relative to the .tex file).
+   - Create comprehensive coverage: aim for 30-60 slides total to accommodate:
+     - Title slide
+     - Citation slide
+     - 5-10 content slides (intro, motivation, problem, etc.)
+     - **TWO slides per extracted figure** (discussion + element)
+     - **TWO slides per extracted table** (discussion + element)
+     - 2-5 content slides (conclusion, future work)
+     - Thank you slide
+   - Each figure and table gets TWO slides (discussion → element) - no exceptions!
+   - Integrate element slide pairs into content flow where they're relevant
+
+**FINAL REMINDERS:**
+1. **TWO SLIDES PER ELEMENT**: Each figure/table must get TWO slides (discussion → element)
+2. Your presentation MUST include every single extracted figure and table - two slides each!
+3. **Discussion slide (Slide 1)**: Has 3-5 bullets extracted from the paper, descriptive title
+4. **Element slide (Slide 2)**: Has ONLY visual + caption, simple title ("Figure X" or "Table X")
+5. **Discussion PRECEDES element**: Always discussion first, then the visual
+6. Discussion bullets must be factual content from the paper, not invented interpretations
+7. **MANDATORY CAPTIONS - BEAMER SYNTAX**: Every figure/table MUST have `\captionof{{figure}}{{}}` or `\captionof{{table}}{{}}` with direct description from paper (WITHOUT "Figure X" or "Table X" prefix in the caption text)
+8. **DO NOT use `\begin{{figure}}...\end{{figure}}` blocks inside frames** - use `\captionof` directly instead (Beamer requirement!)
+9. **Element slides are simple**: \centering + \includegraphics + \small + \captionof (NO bullets, NO columns)
+10. **LATEX SYNTAX ONLY**: Use `\end{{itemize}}` NOT `</end{itemize}>` - no HTML/XML syntax!
+11. **VERIFY TAG BALANCE**: Count all begin/end pairs - they MUST match exactly
+12. **INTEGRATE INTO FLOW**: Place element slide pairs where they're relevant in the content, not all at the end
+
+Now, using the provided research paper PDF and extracted image files, generate the LaTeX presentation code following all the guidelines above. Remember: TWO slides per element (discussion → visual), integrated into content flow!

@@ -588,14 +588,18 @@ def generate_with_ai(
             tables = [e for e in paper.extracted_elements if e.element_type.value == "table"]
 
             if figures:
-                paper_content += "Extracted Figures:\n"
+                paper_content += f"**CRITICAL: {len(figures)} Extracted Figures (YOU MUST INCLUDE ALL OF THEM):**\n"
+                paper_content += f"⚠️  Create TWO slides per figure: (1) Discussion slide, (2) Figure slide\n"
+                paper_content += f"⚠️  Total required figure slides: {len(figures) * 2}\n\n"
                 for fig in figures:
                     filename = fig.output_filename.name if fig.output_filename else "unknown"
                     paper_content += f"- {filename} (page {fig.page_number})\n"
                 paper_content += "\n"
 
             if tables:
-                paper_content += "Extracted Tables:\n"
+                paper_content += f"**CRITICAL: {len(tables)} Extracted Tables (YOU MUST INCLUDE ALL OF THEM):**\n"
+                paper_content += f"⚠️  Create TWO slides per table: (1) Discussion slide, (2) Table slide\n"
+                paper_content += f"⚠️  Total required table slides: {len(tables) * 2}\n\n"
                 for tbl in tables:
                     filename = tbl.output_filename.name if tbl.output_filename else "unknown"
                     paper_content += f"- {filename} (page {tbl.page_number})\n"

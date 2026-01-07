@@ -88,8 +88,13 @@ paperdeck generate my_paper.pdf
 # Custom output directory and theme
 paperdeck generate my_paper.pdf -o presentations/ -t Berkeley
 
-# Use custom prompt template (e.g., hangeul for Korean language presentations)
-# Demonstrates customizability of prompts for specific purposes
+# Use single-element template for clean discussion → visual layout
+paperdeck generate my_paper.pdf -p single-element
+
+# Use complete template for comprehensive coverage
+paperdeck generate my_paper.pdf -p complete
+
+# Use hangeul template for Korean language presentations
 paperdeck generate my_paper.pdf -p hangeul
 
 # Use GPT-4 with verbose output
@@ -124,10 +129,18 @@ paperdeck list-prompts
 
 **Output:**
 ```
-Available prompt templates (2):
+Available prompt templates (4):
 
   • default [builtin]
     Standard presentation template with balanced technical content
+    Style: technical, Detail: medium
+
+  • complete [builtin]
+    Comprehensive presentation with detailed content coverage
+    Style: technical, Detail: high
+
+  • single-element [builtin]
+    Modern layout with discussion → visual pattern (one element per slide)
     Style: technical, Detail: medium
 
   • hangeul [builtin]
@@ -216,7 +229,7 @@ INFO -   • Output directory: ./output/extracted
 
 ### Prompt Templates
 
-PaperDeck includes two built-in prompt templates:
+PaperDeck includes four built-in prompt templates:
 
 #### 1. **Default**
 - Suitable for: General academic presentations
@@ -224,7 +237,40 @@ PaperDeck includes two built-in prompt templates:
 - Audience: Academic researchers
 - Features: Balanced technical content with clear structure
 
-#### 2. **Hangeul** (Korean Language)
+#### 2. **Complete**
+- Suitable for: Comprehensive academic presentations
+- Detail level: High
+- Audience: Academic researchers
+- Features: Detailed content coverage with two-column layouts for figures/tables
+
+#### 3. **Single-Element** (Recommended)
+- Suitable for: Modern, visually-focused presentations
+- Detail level: Medium
+- Audience: Academic researchers and general audiences
+- Features:
+  - **Discussion → Visual pattern**: Each figure/table gets two dedicated slides
+  - **Slide 1**: Discussion bullets explaining the content
+  - **Slide 2**: Full-screen figure/table with caption
+  - **Clean layout**: No complex multi-column layouts
+  - **Better sizing**: Figures use 90% of slide width, tables use 95%
+  - **Smaller captions**: `\small` font for more compact captions
+  - **No overfull boxes**: Simpler layout eliminates LaTeX sizing issues
+  - **Perfect for**: Papers with many figures/tables
+
+**Example structure:**
+```
+Discussion Slide:         Figure Slide:
+┌─────────────────────┐  ┌─────────────────────┐
+│ Architecture Overview│  │ Figure 1            │
+│ • Component 1        │  │                     │
+│ • Component 2        │  │    [Full-screen     │
+│ • Component 3        │  │     figure]         │
+│ • Key insight        │  │                     │
+└─────────────────────┘  │ Caption: ...        │
+                         └─────────────────────┘
+```
+
+#### 4. **Hangeul** (Korean Language)
 - Suitable for: Korean language presentations
 - Detail level: Medium
 - Audience: Korean-speaking academic audiences

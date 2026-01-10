@@ -1,0 +1,28 @@
+\documentclass{beamer}
+\begin{document}
+
+\begin{frame}
+\frametitle{Orphan Begin Tag}
+\begin{itemize}
+  \item First item
+  \item Second item
+% Missing \end{itemize} here
+\end{frame}
+
+\begin{frame}
+\frametitle{Orphan End Tag}
+  \item Orphan item
+  \item Another orphan
+\end{itemize}
+% Missing \begin{itemize} at start
+\end{frame}
+
+\begin{frame}
+\frametitle{Duplicate Begin}
+\begin{itemize}
+\begin{itemize}
+  \item Item
+\end{itemize}
+\end{frame}
+
+\end{document}

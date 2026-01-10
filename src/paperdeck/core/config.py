@@ -15,11 +15,11 @@ from .models import ElementType
 class ExtractionConfiguration:
     """Configuration for DocScalpel PDF element extraction."""
 
-    confidence_threshold: float = 0.75
+    confidence_threshold: float = 0.5
     element_types: List[ElementType] = field(
         default_factory=lambda: [ElementType.FIGURE, ElementType.TABLE, ElementType.EQUATION]
     )
-    boundary_padding: int = 5
+    boundary_padding: int = 0
     max_pages: Optional[int] = None
     output_directory: Path = field(default_factory=lambda: Path("./extracted"))
     overwrite_existing: bool = False
@@ -177,6 +177,15 @@ class AppConfiguration:
     log_level: str = "INFO"
     extraction_config: ExtractionConfiguration = field(default_factory=ExtractionConfiguration)
     text_extraction: TextExtractionConfig = field(default_factory=TextExtractionConfig)
+
+    # LaTeX validation and auto-fix settings (Feature 005)
+    enable_validation: bool = True  # Enable LaTeX structure validation
+    enable_autofix: bool = True  # Enable automatic fixing of detected errors
+    enable_retry: bool = True  # Enable retry on compilation failure
+    max_retry_attempts: int = 2  # Maximum number of compilation retry attempts
+    validation_environments: List[str] = field(
+        default_factory=lambda: ['frame', 'columns', 'column', 'itemize', 'enumerate']
+    )  # LaTeX environments to validate
 
     def __post_init__(self):
         """Validate application configuration."""

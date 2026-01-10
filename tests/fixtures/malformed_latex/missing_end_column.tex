@@ -1,0 +1,22 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+
+\title{Test Presentation}
+\author{Test Author}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \frametitle{Test Frame with Missing End Column}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      Content in first column
+    % Missing \end{column} here
+    \begin{column}{0.5\textwidth}
+      Content in second column
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

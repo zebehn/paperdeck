@@ -58,6 +58,25 @@ logs/
 # Output directories
 paperdeck_output/
 output/
+*_output/
+
+# Generated presentations and examples (exclude from repo)
+# Root-level directories with generated presentations
+dreamgen/
+VLA_Diffusion_switch/
+Learning a thousand tasks in a day/
+IROS25_OpenRoboCare_FI/
+Evaluating Gemini Robotics Policies in a Veo World Simulator/
+openrobocare/
+test_output/
+
+# Common output folder patterns
+1xwm/
+1xwm_*/
+1X_World_Model_*/
+
+# WebUI secret key
+.webui_secret_key
 
 # LaTeX temporary files
 *.aux

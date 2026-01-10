@@ -1,0 +1,30 @@
+\documentclass{beamer}
+\begin{document}
+
+\begin{frame}
+\frametitle{Orphan Begin Tag}
+\begin{itemize}
+  \item First item
+  \item Second item
+\end{itemize}
+% Added \end{itemize} - FIXED
+\end{frame}
+
+\begin{frame}
+\frametitle{Orphan End Tag}
+\begin{itemize}
+% Added \begin{itemize} - FIXED
+  \item Orphan item
+  \item Another orphan
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Duplicate Begin}
+\begin{itemize}
+% Removed duplicate \begin{itemize} - FIXED
+  \item Item
+\end{itemize}
+\end{frame}
+
+\end{document}

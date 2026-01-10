@@ -7,7 +7,11 @@ in LaTeX beamer documents.
 from pathlib import Path
 from typing import List, Optional
 
+from .delimiter_matcher import DelimiterMatcher, UnmatchedDelimiter
+from .delimiter_types import DelimiterType
 from .environment_matcher import EnvironmentMatcher
+from .error_types import ErrorType
+from .fix_confidence import FixConfidence
 from .validation_errors import ValidationError, ValidationResult, ERROR_MESSAGES, SUGGESTED_FIXES
 
 
@@ -17,12 +21,28 @@ class ValidationConfig:
     Attributes:
         environments: List of environment names to validate
         strict_mode: If True, treat warnings as errors
+        validate_braces: Enable brace matching validation
+        validate_brackets: Enable bracket matching validation
+        validate_parens: Enable parenthesis matching validation
+        check_nesting: Validate environment nesting rules
+        skip_math_mode: Skip validation inside math mode
+        max_errors: Stop after N errors (performance)
+        include_context_lines: Lines before/after error for context
+        report_confidence: Include confidence in reports
     """
 
     def __init__(
         self,
         environments: Optional[List[str]] = None,
-        strict_mode: bool = False
+        strict_mode: bool = False,
+        validate_braces: bool = True,
+        validate_brackets: bool = True,
+        validate_parens: bool = False,
+        check_nesting: bool = True,
+        skip_math_mode: bool = True,
+        max_errors: int = 100,
+        include_context_lines: int = 2,
+        report_confidence: bool = True
     ):
         """Initialize validation configuration.
 
@@ -30,9 +50,56 @@ class ValidationConfig:
             environments: List of environment names to validate.
                          If None, uses default from EnvironmentMatcher.
             strict_mode: If True, warnings are treated as errors
+            validate_braces: Enable brace matching validation (FR-003)
+            validate_brackets: Enable bracket matching validation (FR-003)
+            validate_parens: Enable paren matching validation (lower priority)
+            check_nesting: Validate environment nesting (FR-004)
+            skip_math_mode: Skip validation in math mode
+            max_errors: Maximum errors to detect before stopping
+            include_context_lines: Number of context lines before/after error
+            report_confidence: Include confidence scores in reports
         """
         self.environments = environments
         self.strict_mode = strict_mode
+        self.validate_braces = validate_braces
+        self.validate_brackets = validate_brackets
+        self.validate_parens = validate_parens
+        self.check_nesting = check_nesting
+        self.skip_math_mode = skip_math_mode
+        self.max_errors = max_errors
+        self.include_context_lines = include_context_lines
+        self.report_confidence = report_confidence
+
+    @classmethod
+    def default(cls) -> 'ValidationConfig':
+        """Default validation configuration for paperdeck."""
+        return cls(
+            environments=None,  # Use default environment list
+            strict_mode=False,
+            validate_braces=True,
+            validate_brackets=True,
+            validate_parens=False,
+            check_nesting=True,
+            skip_math_mode=True,
+            max_errors=100,
+            include_context_lines=2,
+            report_confidence=True
+        )
+
+    @classmethod
+    def strict(cls) -> 'ValidationConfig':
+        """Strict validation configuration."""
+        return cls(
+            strict_mode=True,
+            validate_braces=True,
+            validate_brackets=True,
+            validate_parens=True,  # Enable all validation
+            check_nesting=True,
+            skip_math_mode=False,  # Validate everything
+            max_errors=1000,
+            include_context_lines=3,
+            report_confidence=True
+        )
 
 
 class LaTeXValidator:
@@ -52,6 +119,7 @@ class LaTeXValidator:
         """
         self.config = config or ValidationConfig()
         self.matcher = EnvironmentMatcher(environments=self.config.environments)
+        self.delimiter_matcher = DelimiterMatcher()
 
     def validate_file(self, tex_path: Path) -> ValidationResult:
         """Validate a .tex file.
@@ -95,8 +163,11 @@ class LaTeXValidator:
         # Check for HTML/XML syntax (CRITICAL - prevents compilation failures)
         html_syntax_errors = self._check_html_syntax(lines)
 
+        # Check for delimiter matching (braces, brackets, parens)
+        delimiter_errors = self._check_delimiter_matching(lines)
+
         # Combine all errors
-        all_errors = matching_errors + duplicate_errors + html_syntax_errors
+        all_errors = matching_errors + duplicate_errors + html_syntax_errors + delimiter_errors
 
         # Sort errors by line number
         all_errors.sort(key=lambda e: e.line_number)
@@ -138,7 +209,9 @@ class LaTeXValidator:
                         environment=um.environment,
                         message=message,
                         suggested_fix=suggested_fix,
-                        severity='error'
+                        severity='error',
+                        fix_confidence=FixConfidence.HIGH.value,  # High confidence for missing ends
+                        auto_fixable=True
                     )
                 )
             else:
@@ -154,7 +227,9 @@ class LaTeXValidator:
                         environment=um.environment,
                         message=message,
                         suggested_fix=suggested_fix,
-                        severity='error'
+                        severity='error',
+                        fix_confidence=FixConfidence.MEDIUM.value,  # Medium confidence for unmatched ends
+                        auto_fixable=False  # Requires context to fix properly
                     )
                 )
 
@@ -185,7 +260,9 @@ class LaTeXValidator:
                     environment=dup.environment,
                     message=message,
                     suggested_fix=suggested_fix,
-                    severity='error'
+                    severity='error',
+                    fix_confidence=FixConfidence.HIGH.value,  # High confidence for duplicates
+                    auto_fixable=True
                 )
             )
 
@@ -259,5 +336,105 @@ class LaTeXValidator:
                             severity='error'
                         )
                     )
+
+        return errors
+
+    def _check_delimiter_matching(self, lines: List[str]) -> List[ValidationError]:
+        """Check for unmatched delimiters (braces, brackets, parens).
+
+        Args:
+            lines: List of LaTeX file lines
+
+        Returns:
+            List of ValidationError objects for unmatched delimiters
+        """
+        errors = []
+
+        # Check braces if enabled
+        if self.config.validate_braces:
+            brace_errors = self._process_delimiter_errors(
+                self.delimiter_matcher.find_unmatched_braces(lines),
+                DelimiterType.BRACE
+            )
+            errors.extend(brace_errors)
+
+        # Check brackets if enabled
+        if self.config.validate_brackets:
+            bracket_errors = self._process_delimiter_errors(
+                self.delimiter_matcher.find_unmatched_brackets(lines),
+                DelimiterType.BRACKET
+            )
+            errors.extend(bracket_errors)
+
+        # Check parentheses if enabled
+        if self.config.validate_parens:
+            paren_errors = self._process_delimiter_errors(
+                self.delimiter_matcher.find_unmatched_parens(lines),
+                DelimiterType.PAREN
+            )
+            errors.extend(paren_errors)
+
+        return errors
+
+    def _process_delimiter_errors(
+        self,
+        unmatched: List[UnmatchedDelimiter],
+        delimiter_type: DelimiterType
+    ) -> List[ValidationError]:
+        """Convert UnmatchedDelimiter objects to ValidationError objects.
+
+        Args:
+            unmatched: List of UnmatchedDelimiter objects
+            delimiter_type: Type of delimiter
+
+        Returns:
+            List of ValidationError objects
+        """
+        errors = []
+
+        for um in unmatched:
+            # Determine error type based on delimiter type and tag type
+            if um.tag_type == 'open':
+                if delimiter_type == DelimiterType.BRACE:
+                    error_type = ErrorType.UNMATCHED_BRACE_OPEN.value
+                elif delimiter_type == DelimiterType.BRACKET:
+                    error_type = ErrorType.UNMATCHED_BRACKET_OPEN.value
+                else:  # PAREN
+                    error_type = ErrorType.UNMATCHED_PAREN_OPEN.value
+
+                message = f"Missing closing {delimiter_type.display_name}: unmatched '{um.delimiter_type.opening}'"
+                suggested_fix = f"Add closing {delimiter_type.display_name} '{um.delimiter_type.closing}' at appropriate location"
+                # High confidence for simple missing closing delimiters
+                confidence = FixConfidence.HIGH.value
+            else:  # close
+                if delimiter_type == DelimiterType.BRACE:
+                    error_type = ErrorType.UNMATCHED_BRACE_CLOSE.value
+                elif delimiter_type == DelimiterType.BRACKET:
+                    error_type = ErrorType.UNMATCHED_BRACKET_CLOSE.value
+                else:  # PAREN
+                    error_type = ErrorType.UNMATCHED_PAREN_CLOSE.value
+
+                message = f"Extra closing {delimiter_type.display_name}: unmatched '{um.delimiter_type.closing}'"
+                suggested_fix = f"Remove extra closing {delimiter_type.display_name} or add matching opening {delimiter_type.display_name}"
+                # High confidence for removing extra closing delimiters
+                confidence = FixConfidence.HIGH.value
+
+            # Determine if auto-fixable based on config and confidence
+            auto_fixable = confidence >= self.config.confidence_threshold if hasattr(self.config, 'confidence_threshold') else confidence >= 0.80
+
+            errors.append(
+                ValidationError(
+                    line_number=um.line_number,
+                    column_number=um.column_number,
+                    error_type=error_type,
+                    environment='',  # Not environment-related
+                    message=message,
+                    suggested_fix=suggested_fix,
+                    severity='error',
+                    line_content=um.line_content,
+                    fix_confidence=confidence,
+                    auto_fixable=auto_fixable
+                )
+            )
 
         return errors

@@ -22,7 +22,8 @@ class TestLaTeXFixer:
             error_type='missing_end',
             environment='frame',
             message="Missing \\end{frame}",
-            suggested_fix="Add \\end{frame} tag"
+            suggested_fix="Add \\end{frame} tag",
+            fix_confidence=1.0  # High confidence for auto-fix
         )
 
         fixed_content, changes = fixer.fix_validation_errors(content, [error])
@@ -46,14 +47,16 @@ class TestLaTeXFixer:
                 error_type='missing_end',
                 environment='frame',
                 message="Missing \\end{frame}",
-                suggested_fix="Add \\end{frame}"
+                suggested_fix="Add \\end{frame}",
+                fix_confidence=1.0
             ),
             ValidationError(
                 line_number=3,
                 error_type='missing_end',
                 environment='itemize',
                 message="Missing \\end{itemize}",
-                suggested_fix="Add \\end{itemize}"
+                suggested_fix="Add \\end{itemize}",
+                fix_confidence=1.0
             )
         ]
 
@@ -80,7 +83,8 @@ class TestLaTeXFixer:
             error_type='duplicate_block',
             environment='column',
             message="Duplicate \\begin{column}",
-            suggested_fix="Remove duplicate"
+            suggested_fix="Remove duplicate",
+            fix_confidence=1.0
         )
 
         fixed_content, changes = fixer.fix_validation_errors(content, [error])
@@ -102,7 +106,8 @@ class TestLaTeXFixer:
             error_type='missing_end',
             environment='itemize',
             message="Missing \\end{itemize}",
-            suggested_fix="Add \\end{itemize}"
+            suggested_fix="Add \\end{itemize}",
+            fix_confidence=1.0
         )
 
         fixed_content, changes = fixer.fix_validation_errors(content, [error])
@@ -119,9 +124,9 @@ class TestLaTeXFixer:
 \begin{enumerate}
 """
         errors = [
-            ValidationError(2, 'missing_end', 'frame', "Missing", "Fix"),
-            ValidationError(3, 'missing_end', 'itemize', "Missing", "Fix"),
-            ValidationError(4, 'missing_end', 'enumerate', "Missing", "Fix"),
+            ValidationError(2, 'missing_end', 'frame', "Missing", "Fix", fix_confidence=1.0),
+            ValidationError(3, 'missing_end', 'itemize', "Missing", "Fix", fix_confidence=1.0),
+            ValidationError(4, 'missing_end', 'enumerate', "Missing", "Fix", fix_confidence=1.0),
         ]
 
         fixed_content, changes = fixer.fix_validation_errors(content, errors)
@@ -141,7 +146,8 @@ class TestLaTeXFixer:
             error_type='missing_end',
             environment='frame',
             message="Missing \\end{frame}",
-            suggested_fix="Add \\end{frame}"
+            suggested_fix="Add \\end{frame}",
+            fix_confidence=1.0
         )
 
         fixed_content, changes = fixer.fix_validation_errors(content, [error])
@@ -162,7 +168,8 @@ class TestLaTeXFixer:
             error_type='duplicate_block',
             environment='column',
             message="Duplicate",
-            suggested_fix="Remove"
+            suggested_fix="Remove",
+            fix_confidence=1.0
         )
 
         fixed_content, changes = fixer.fix_validation_errors(content, [error])
@@ -182,7 +189,8 @@ class TestLaTeXFixer:
             error_type='missing_end',
             environment='frame',
             message="Missing",
-            suggested_fix="Fix"
+            suggested_fix="Fix",
+            fix_confidence=1.0
         )
 
         _, changes = fixer.fix_validation_errors(content, [error])
@@ -198,7 +206,7 @@ class TestLaTeXFixer:
 \begin{frame}
   Content
 """
-        error = ValidationError(2, 'missing_end', 'frame', "Missing", "Fix")
+        error = ValidationError(2, 'missing_end', 'frame', "Missing", "Fix", fix_confidence=1.0)
 
         fixer.fix_validation_errors(content, [error])
         assert len(fixer.get_changes_log()) > 0
@@ -236,7 +244,8 @@ class TestLaTeXFixer:
             error_type='missing_end',
             environment='itemize',
             message="Missing \\end{itemize}",
-            suggested_fix="Add \\end{itemize}"
+            suggested_fix="Add \\end{itemize}",
+            fix_confidence=1.0
         )
 
         fixed_content, changes = fixer.fix_validation_errors(content, [error])

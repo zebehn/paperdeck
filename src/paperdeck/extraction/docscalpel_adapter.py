@@ -297,12 +297,14 @@ class DocScalpelAdapter:
                 # Create element with minimal metadata
                 # Note: CLI doesn't provide bounding box, page number, or confidence
                 # We use placeholder values that indicate these are not available
+                # IMPORTANT: Set confidence_score to 1.0 since DocScalpel CLI has already
+                # filtered by confidence threshold, so all extracted elements passed the threshold
                 element = element_class(
                     uuid=uuid4(),
                     element_type=element_type,
                     page_number=sequence_num,  # Use sequence as page (actual page unknown from CLI)
                     bounding_box=BoundingBox(x=0, y=0, width=0, height=0),  # Unknown
-                    confidence_score=0.0,  # Unknown from CLI output
+                    confidence_score=1.0,  # Set to 1.0 - CLI already filtered by confidence
                     sequence_number=sequence_num,
                     caption=None,
                     output_filename=file_path,

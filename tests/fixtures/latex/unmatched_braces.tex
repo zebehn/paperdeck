@@ -1,0 +1,22 @@
+\documentclass{beamer}
+\begin{document}
+
+\begin{frame}
+\frametitle{Test Frame}
+% Missing closing brace on next line
+\textbf{This is bold text
+\end{frame}
+
+\begin{frame}
+\frametitle{Extra Brace}
+% Extra closing brace on next line
+\textit{Italic text}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Nested Error}
+% Missing inner closing brace
+\textbf{\textit{nested text}
+\end{frame}
+
+\end{document}

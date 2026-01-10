@@ -110,7 +110,8 @@ class TestAutoFixPerformance:
         assert result.error_count() > 0
 
         # Measure auto-fix time
-        fixer = LaTeXFixer()
+        # Use lower confidence threshold for this test
+        fixer = LaTeXFixer(FixerConfig(confidence_threshold=0.5))
         start_time = time.time()
         fixed_content, changes = fixer.fix_validation_errors(content, result.errors)
         elapsed_ms = (time.time() - start_time) * 1000
@@ -138,7 +139,8 @@ class TestAutoFixPerformance:
         assert result.error_count() >= 40
 
         # Measure fix time
-        fixer = LaTeXFixer()
+        # Use lower confidence threshold for this test
+        fixer = LaTeXFixer(FixerConfig(confidence_threshold=0.5, max_fixes_per_file=100))
         start_time = time.time()
         fixed_content, changes = fixer.fix_validation_errors(content, result.errors)
         elapsed_ms = (time.time() - start_time) * 1000
@@ -189,7 +191,7 @@ class TestEndToEndPerformance:
 
         # Step 2: Auto-fix if needed
         if result.has_errors():
-            fixer = LaTeXFixer()
+            fixer = LaTeXFixer(FixerConfig(confidence_threshold=0.5))
             fixed_content, changes = fixer.fix_validation_errors(content, result.errors)
             tex_file.write_text(fixed_content)
 

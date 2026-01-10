@@ -88,8 +88,8 @@ def cli(ctx):
 @click.option(
     "--extraction-confidence",
     type=float,
-    default=0.75,
-    help="Minimum confidence threshold for extracted elements (0.0-1.0, default: 0.75)",
+    default=0.5,
+    help="Minimum confidence threshold for extracted elements (0.0-1.0, default: 0.5)",
 )
 @click.option(
     "--elements-output-dir",

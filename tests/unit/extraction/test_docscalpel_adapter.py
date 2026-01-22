@@ -17,14 +17,15 @@ class TestDocScalpelAdapter:
     """Tests for DocScalpelAdapter initialization and import handling."""
 
     def test_adapter_initialization_without_docscalpel(self):
-        """Test adapter initializes gracefully when DocScalpel not installed."""
-        with patch.dict('sys.modules', {'docscalpel': None}):
+        """Test adapter initializes gracefully when DocScalpel CLI not found."""
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value=None):
             with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
                 adapter = DocScalpelAdapter()
 
                 assert adapter.docscalpel_available is False
+                assert adapter.docscalpel_path is None
                 mock_logger.warning.assert_called_once()
-                assert "DocScalpel not installed" in str(mock_logger.warning.call_args)
+                assert "DocScalpel CLI not found" in str(mock_logger.warning.call_args)
 
     def test_extract_returns_empty_when_docscalpel_unavailable(self, tmp_path):
         """Test extract returns empty list when DocScalpel not available."""
@@ -88,60 +89,64 @@ class TestDocScalpelAdapterWithMock:
 class TestDocScalpelAdapterPDFOutput:
     """Tests for PDF output format (User Story 1)."""
 
-    def test_extract_uses_pdf_naming_pattern(self, mock_docscalpel, mock_pdf_result):
-        """[US1] Verify adapter configures docscalpel to use PDF naming pattern.
+    def test_extract_uses_correct_cli_arguments(self, tmp_path):
+        """[US1] Verify adapter passes correct arguments to docscalpel CLI.
 
-        Test that the naming_pattern passed to ExtractionConfig uses:
-        - PDF extension (.pdf not .png)
-        - Zero-padded counter format ({counter:02d})
+        Test that the CLI is called with:
+        - Correct types argument (figure,table)
+        - Output directory
         """
-        # Create adapter with mocked docscalpel
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+        output_dir = tmp_path / "extracted"
 
-        # Mock the extract_elements call
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-        # Extract from test PDF
-        pdf_path = Path("/tmp/test.pdf")
-        result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                # Mock successful version check
+                mock_run.return_value = Mock(returncode=0, stdout='', stderr='')
 
-        # Verify ExtractionConfig was called with PDF naming pattern
-        mock_docscalpel.ExtractionConfig.assert_called_once()
-        config_call = mock_docscalpel.ExtractionConfig.call_args
+                adapter = DocScalpelAdapter(config)
+                adapter.extract(pdf_file, [ElementType.FIGURE])
 
-        # Check naming_pattern argument
-        assert 'naming_pattern' in config_call.kwargs or len(config_call.args) > 3
-        if 'naming_pattern' in config_call.kwargs:
-            naming_pattern = config_call.kwargs['naming_pattern']
-        else:
-            # Assuming naming_pattern is 4th positional argument
-            naming_pattern = config_call.args[3] if len(config_call.args) > 3 else None
+                # Find the extraction call (second call, after version check)
+                calls = mock_run.call_args_list
+                assert len(calls) >= 2, f"Expected at least 2 subprocess calls, got {len(calls)}"
 
-        # Verify PDF format with zero-padding
-        assert naming_pattern is not None, "naming_pattern not passed to ExtractionConfig"
-        assert '.pdf' in naming_pattern, f"Expected .pdf extension, got: {naming_pattern}"
-        assert '{counter:02d}' in naming_pattern or '{counter:0' in naming_pattern, \
-            f"Expected zero-padded counter, got: {naming_pattern}"
+                extract_call = calls[1]
+                cmd = extract_call[0][0]
 
-    def test_extract_zero_padded_numbering(self, mock_docscalpel, mock_pdf_result_multiple_elements):
+                # Verify CLI arguments
+                assert cmd[0] == '/usr/bin/docscalpel'
+                assert '--types' in cmd
+                types_idx = cmd.index('--types')
+                assert cmd[types_idx + 1] == 'figure'
+                assert '--output' in cmd
+
+    def test_extract_zero_padded_numbering(self, tmp_path):
         """[US1] Verify extracted PDF files use zero-padded numbering.
 
-        Test that output filenames use format: figure_01.pdf, figure_02.pdf, ...
-        Not: figure_1.pdf, figure_2.pdf
+        Test that output filenames like figure_01.pdf, figure_02.pdf are loaded correctly.
         """
-        # Create adapter with mocked docscalpel
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        output_dir = tmp_path / "extracted"
+        output_dir.mkdir()
 
-        # Mock extract_elements to return 10 figures
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result_multiple_elements
+        # Create 10 mock extracted figure files with zero-padded names
+        for i in range(1, 11):
+            (output_dir / f"figure_{i:02d}.pdf").write_bytes(b"dummy")
 
-        # Extract
-        pdf_path = Path("/tmp/test.pdf")
-        result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+
+        config = ExtractionConfiguration(output_directory=output_dir)
+
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                mock_run.return_value = Mock(returncode=0, stdout='', stderr='')
+
+                adapter = DocScalpelAdapter(config)
+                result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
         # Verify we got 10 elements
         assert len(result) == 10, f"Expected 10 elements, got {len(result)}"
@@ -161,224 +166,244 @@ class TestDocScalpelAdapterPDFOutput:
 class TestDocScalpelAdapterErrorHandling:
     """Tests for error handling and logging (User Story 2)."""
 
-    def test_extraction_failure_logs_errors_individually(self, mock_docscalpel, mock_pdf_result_with_errors):
-        """[US2] Verify adapter logs each error individually with enumeration.
+    def test_extraction_failure_logs_errors(self, tmp_path):
+        """[US2] Verify adapter logs errors when CLI extraction fails.
 
-        Test that when extraction fails (success=False), each error message
-        in result.errors is logged individually with [i/total] format.
+        Test that when CLI returns non-zero exit code, errors are logged.
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        pdf_file = tmp_path / "corrupted.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+        output_dir = tmp_path / "extracted"
 
-        # Mock extract_elements to return failure result
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result_with_errors
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
-            pdf_path = Path("/tmp/corrupted.pdf")
-            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                # First call (version check) succeeds, second call (extract) fails
+                mock_run.side_effect = [
+                    Mock(returncode=0, stdout='', stderr=''),  # version check
+                    Mock(returncode=1, stdout='', stderr='Error processing PDF')  # extraction
+                ]
 
-            # Should return empty list on failure
-            assert result == []
+                with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+                    adapter = DocScalpelAdapter(config)
+                    result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
-            # Verify ERROR level logging was called
-            assert mock_logger.error.called, "Expected error logging for extraction failure"
+                    # Should return empty list on failure
+                    assert result == []
 
-            # Verify each error logged with enumeration
-            error_calls = [call for call in mock_logger.error.call_args_list]
-            assert len(error_calls) >= 3, f"Expected at least 3 error log calls, got {len(error_calls)}"
+                    # Verify ERROR level logging was called
+                    assert mock_logger.error.called, "Expected error logging for extraction failure"
 
-            # Check that errors contain enumeration pattern [i/total]
-            error_messages = [str(call) for call in error_calls]
-            has_enumeration = any('[1/' in msg or '[2/' in msg or '[3/' in msg for msg in error_messages)
-            assert has_enumeration, f"Expected error enumeration [i/total] in logs, got: {error_messages}"
+    def test_extraction_succeeds_with_output_files(self, tmp_path):
+        """[US2] Verify adapter returns elements when CLI succeeds and files exist.
 
-    def test_extraction_warnings_logged(self, mock_docscalpel, mock_pdf_result_with_warnings):
-        """[US2] Verify adapter logs warnings individually.
-
-        Test that warnings are logged individually even when extraction succeeds.
+        Test that successful extraction loads elements from output directory.
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        output_dir = tmp_path / "extracted"
+        output_dir.mkdir()
+        (output_dir / "figure_01.pdf").write_bytes(b"dummy")
 
-        # Mock extract_elements to return result with warnings
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result_with_warnings
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
 
-        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
-            pdf_path = Path("/tmp/test.pdf")
-            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-            # Should return elements despite warnings
-            assert len(result) > 0, "Expected elements even with warnings"
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                mock_run.return_value = Mock(returncode=0, stdout='', stderr='')
 
-            # Verify WARNING level logging was called
-            assert mock_logger.warning.called, "Expected warning logging"
+                adapter = DocScalpelAdapter(config)
+                result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
-            # Verify individual warnings logged
-            warning_calls = [call for call in mock_logger.warning.call_args_list]
-            assert len(warning_calls) >= 2, f"Expected at least 2 warning log calls, got {len(warning_calls)}"
+                # Should return elements
+                assert len(result) == 1, f"Expected 1 element, got {len(result)}"
 
-    def test_extraction_checks_success_flag(self, mock_docscalpel, mock_pdf_result_with_errors):
-        """[US2] Verify adapter checks result.success before processing elements.
+    def test_extraction_checks_cli_return_code(self, tmp_path):
+        """[US2] Verify adapter checks CLI return code before processing.
 
-        Test that the adapter respects the success flag and doesn't process
-        elements when success=False, even if elements list is present.
+        Test that the adapter respects the returncode and doesn't process
+        elements when returncode is non-zero.
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+        output_dir = tmp_path / "extracted"
+        output_dir.mkdir()
+        # Create output file that would normally be loaded
+        (output_dir / "figure_01.pdf").write_bytes(b"dummy")
 
-        # Create result with success=False but non-empty elements (shouldn't happen, but test it)
-        mock_result = Mock()
-        mock_result.success = False
-        mock_result.elements = [Mock()]  # Has elements but failed
-        mock_result.errors = ["Test error"]
-        mock_result.warnings = []
-        mock_result.extraction_time_seconds = 0.5
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-        mock_docscalpel.extract_elements.return_value = mock_result
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                # Version check succeeds, extraction fails
+                mock_run.side_effect = [
+                    Mock(returncode=0, stdout='', stderr=''),
+                    Mock(returncode=1, stdout='', stderr='Error')
+                ]
 
-        pdf_path = Path("/tmp/test.pdf")
-        result = adapter.extract(pdf_path, [ElementType.FIGURE])
+                adapter = DocScalpelAdapter(config)
+                result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
-        # Must return empty list when success=False, regardless of elements
-        assert result == [], f"Expected empty list when success=False, got {len(result)} elements"
+        # Must return empty list when returncode is non-zero
+        assert result == [], f"Expected empty list when CLI fails, got {len(result)} elements"
 
-    def test_graceful_degradation_returns_empty_list(self, mock_docscalpel, mock_pdf_result_with_errors):
+    def test_graceful_degradation_returns_empty_list(self, tmp_path):
         """[US2] Verify graceful degradation returns empty list on failure.
 
         Test that extraction failures don't raise exceptions but return
         empty list, allowing the application to continue with text-only slides.
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        pdf_file = tmp_path / "corrupted.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+        output_dir = tmp_path / "extracted"
 
-        # Mock extract_elements to return failure
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result_with_errors
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-        pdf_path = Path("/tmp/corrupted.pdf")
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                mock_run.side_effect = [
+                    Mock(returncode=0, stdout='', stderr=''),
+                    Mock(returncode=1, stdout='', stderr='Error processing corrupted PDF')
+                ]
 
-        # Should not raise exception
-        try:
-            result = adapter.extract(pdf_path, [ElementType.FIGURE])
-        except Exception as e:
-            pytest.fail(f"Extract should not raise exception, got: {e}")
+                adapter = DocScalpelAdapter(config)
 
-        # Should return empty list
-        assert result == [], f"Expected empty list on failure, got {result}"
-        assert isinstance(result, list), "Result should be a list"
+                # Should not raise exception
+                try:
+                    result = adapter.extract(pdf_file, [ElementType.FIGURE])
+                except Exception as e:
+                    pytest.fail(f"Extract should not raise exception, got: {e}")
+
+                # Should return empty list
+                assert result == [], f"Expected empty list on failure, got {result}"
+                assert isinstance(result, list), "Result should be a list"
 
 
 class TestDocScalpelAdapterPerformance:
     """Tests for performance logging and monitoring (User Story 3)."""
 
-    def test_extraction_logs_performance_metrics(self, mock_docscalpel, mock_pdf_result):
+    def test_extraction_logs_performance_metrics(self, tmp_path):
         """[US3] Verify adapter logs performance metrics after extraction.
 
         Test that extraction logs:
         - Total elements extracted
-        - Library execution time (extraction_time_seconds)
         - Total elapsed time
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        output_dir = tmp_path / "extracted"
+        output_dir.mkdir()
+        (output_dir / "figure_01.pdf").write_bytes(b"dummy")
 
-        # Mock extract_elements to return successful result
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
 
-        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
-            pdf_path = Path("/tmp/test.pdf")
-            result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-            # Should log performance info
-            assert mock_logger.info.called, "Expected info logging for performance metrics"
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                mock_run.return_value = Mock(returncode=0, stdout='', stderr='')
 
-            # Check that performance info includes key metrics
-            info_calls = [str(call) for call in mock_logger.info.call_args_list]
-            info_text = ' '.join(info_calls)
+                with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+                    adapter = DocScalpelAdapter(config)
+                    result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
-            # Should mention element count and timing
-            assert any('1 element' in call or 'elements' in call for call in info_calls), \
-                f"Expected element count in logs, got: {info_calls}"
+                    # Should log performance info
+                    assert mock_logger.info.called, "Expected info logging for performance metrics"
 
-    def test_extraction_logs_timing(self, mock_docscalpel, mock_pdf_result):
+                    # Check that performance info includes element count
+                    info_calls = [str(call) for call in mock_logger.info.call_args_list]
+                    assert any('element' in call.lower() for call in info_calls), \
+                        f"Expected element count in logs, got: {info_calls}"
+
+    def test_extraction_logs_timing(self, tmp_path):
         """[US3] Verify adapter logs extraction timing information.
 
-        Test that extraction_time_seconds from DocScalpel result is logged.
+        Test that elapsed time is logged after extraction.
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        output_dir = tmp_path / "extracted"
+        output_dir.mkdir()
+        (output_dir / "figure_01.pdf").write_bytes(b"dummy")
 
-        # Set specific extraction time
-        mock_pdf_result.extraction_time_seconds = 3.5
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
 
-        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
-            with patch('time.perf_counter', side_effect=[0.0, 4.0]):  # Mock timing
-                pdf_path = Path("/tmp/test.pdf")
-                result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-                # Should log timing information
-                info_calls = [str(call) for call in mock_logger.info.call_args_list]
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                mock_run.return_value = Mock(returncode=0, stdout='', stderr='')
 
-                # Look for timing information (library time or total time)
-                has_timing = any('3.5' in call or 's' in call or 'time' in call.lower()
-                                for call in info_calls)
-                assert has_timing, f"Expected timing info in logs, got: {info_calls}"
+                with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+                    adapter = DocScalpelAdapter(config)
+                    result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
-    def test_extraction_logs_overhead_warning(self, mock_docscalpel, mock_pdf_result):
-        """[US3] Verify adapter warns about high overhead.
+                    # Should log timing information
+                    info_calls = [str(call) for call in mock_logger.info.call_args_list]
 
-        Test that significant overhead (>2s or >20%) triggers a warning.
+                    # Look for timing information (seconds indicator)
+                    has_timing = any('s' in call for call in info_calls)
+                    assert has_timing, f"Expected timing info in logs, got: {info_calls}"
+
+    def test_extraction_timeout_handling(self, tmp_path):
+        """[US3] Verify adapter handles extraction timeout gracefully.
+
+        Test that timeout during extraction is logged and returns empty list.
         """
-        adapter = DocScalpelAdapter()
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        pdf_file = tmp_path / "large.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+        output_dir = tmp_path / "extracted"
 
-        # Create scenario with high overhead: library=1s, total=5s, overhead=4s (80%)
-        mock_pdf_result.extraction_time_seconds = 1.0
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+        config = ExtractionConfiguration(output_directory=output_dir)
 
-        with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
-            with patch('time.perf_counter', side_effect=[0.0, 5.0]):  # Total 5 seconds
-                pdf_path = Path("/tmp/test.pdf")
-                result = adapter.extract(pdf_path, [ElementType.FIGURE])
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                import subprocess
+                # Version check succeeds, extraction times out
+                mock_run.side_effect = [
+                    Mock(returncode=0, stdout='', stderr=''),
+                    subprocess.TimeoutExpired(cmd='docscalpel', timeout=300)
+                ]
 
-                # Should warn about high overhead
-                warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
-                has_overhead_warning = any('overhead' in call.lower() for call in warning_calls)
-                assert has_overhead_warning, \
-                    f"Expected overhead warning (4s/80%), got warnings: {warning_calls}"
+                with patch('paperdeck.extraction.docscalpel_adapter.logger') as mock_logger:
+                    adapter = DocScalpelAdapter(config)
+                    result = adapter.extract(pdf_file, [ElementType.FIGURE])
 
-    def test_max_pages_parameter(self, mock_docscalpel, mock_pdf_result):
-        """[US3] Verify max_pages parameter is passed to docscalpel config.
+                    # Should return empty list on timeout
+                    assert result == []
+
+                    # Should log error about timeout
+                    assert mock_logger.error.called
+
+    def test_max_pages_parameter(self, tmp_path):
+        """[US3] Verify max_pages parameter is passed to docscalpel CLI.
 
         Test that when max_pages is set in configuration, it's passed
-        to DocScalpel's ExtractionConfig.
+        to the CLI command.
         """
-        from paperdeck.core.config import ExtractionConfiguration
+        pdf_file = tmp_path / "large.pdf"
+        pdf_file.write_bytes(b"dummy pdf")
+        output_dir = tmp_path / "extracted"
 
         # Create config with max_pages limit
-        config = ExtractionConfiguration(max_pages=10)
-        adapter = DocScalpelAdapter(config)
-        adapter.docscalpel_available = True
-        adapter.docscalpel = mock_docscalpel
+        config = ExtractionConfiguration(max_pages=10, output_directory=output_dir)
 
-        mock_docscalpel.extract_elements.return_value = mock_pdf_result
+        with patch('paperdeck.extraction.docscalpel_adapter.shutil.which', return_value='/usr/bin/docscalpel'):
+            with patch('paperdeck.extraction.docscalpel_adapter.subprocess.run') as mock_run:
+                mock_run.return_value = Mock(returncode=0, stdout='', stderr='')
 
-        pdf_path = Path("/tmp/large.pdf")
-        result = adapter.extract(pdf_path, [ElementType.FIGURE])
+                adapter = DocScalpelAdapter(config)
+                adapter.extract(pdf_file, [ElementType.FIGURE])
 
-        # Verify ExtractionConfig was called with max_pages
-        mock_docscalpel.ExtractionConfig.assert_called_once()
-        config_call = mock_docscalpel.ExtractionConfig.call_args
+                # Find the extraction call (second call, after version check)
+                calls = mock_run.call_args_list
+                assert len(calls) >= 2
 
-        # Check max_pages in kwargs
-        assert 'max_pages' in config_call.kwargs, \
-            f"Expected max_pages in config kwargs, got: {config_call.kwargs.keys()}"
-        assert config_call.kwargs['max_pages'] == 10, \
-            f"Expected max_pages=10, got: {config_call.kwargs['max_pages']}"
+                extract_call = calls[1]
+                cmd = extract_call[0][0]
+
+                # Check max_pages in CLI args
+                assert '--max-pages' in cmd, \
+                    f"Expected --max-pages in CLI command, got: {cmd}"
+                max_pages_idx = cmd.index('--max-pages')
+                assert cmd[max_pages_idx + 1] == '10', \
+                    f"Expected max_pages=10, got: {cmd[max_pages_idx + 1]}"

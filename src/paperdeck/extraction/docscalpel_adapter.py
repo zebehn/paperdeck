@@ -6,6 +6,7 @@ to extract figures and tables from PDF papers.
 """
 
 import logging
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -30,8 +31,8 @@ class DocScalpelAdapter:
 
     Attributes:
         config: Optional extraction configuration with flags and settings
-        docscalpel_available: Whether DocScalpel library successfully loaded
-        docscalpel: Reference to the docscalpel module (if available)
+        docscalpel_available: Whether DocScalpel CLI successfully verified
+        docscalpel_path: Full path to the docscalpel CLI executable (if found)
 
     Example:
         >>> from pathlib import Path
@@ -60,24 +61,36 @@ class DocScalpelAdapter:
         """
         self.config = config
         self.docscalpel_available = False
+        self.docscalpel_path: str | None = None
 
-        # Check if docscalpel CLI is available
-        try:
-            result = subprocess.run(
-                ['docscalpel', '--version'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                self.docscalpel_available = True
-                logger.info("DocScalpel CLI available")
-            else:
-                logger.warning(
-                    "DocScalpel CLI not found. Figure/table extraction will be skipped. "
-                    "Install with: pip install git+https://github.com/zebehn/docscalpel.git"
+        # Find docscalpel CLI using shutil.which() for reliable PATH resolution
+        # This ensures the CLI is found even when subprocess doesn't inherit
+        # conda environment PATH properly
+        self.docscalpel_path = shutil.which('docscalpel')
+
+        if self.docscalpel_path:
+            # Verify the CLI works by checking version
+            try:
+                result = subprocess.run(
+                    [self.docscalpel_path, '--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=15  # Allow extra time for CLI startup (loading ML libraries)
                 )
-        except (subprocess.TimeoutExpired, FileNotFoundError):
+                if result.returncode == 0:
+                    self.docscalpel_available = True
+                    logger.info(f"DocScalpel CLI available at {self.docscalpel_path}")
+                else:
+                    logger.warning(
+                        "DocScalpel CLI found but returned error. "
+                        "Figure/table extraction will be skipped."
+                    )
+            except subprocess.TimeoutExpired:
+                logger.warning(
+                    "DocScalpel CLI timed out during version check. "
+                    "Figure/table extraction will be skipped."
+                )
+        else:
             logger.warning(
                 "DocScalpel CLI not found. Figure/table extraction will be skipped. "
                 "Install with: pip install git+https://github.com/zebehn/docscalpel.git"
@@ -155,9 +168,9 @@ class DocScalpelAdapter:
             output_dir = self.config.output_directory if self.config else Path("extracted")
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Build CLI command
+            # Build CLI command using the resolved path
             cmd = [
-                'docscalpel',
+                self.docscalpel_path,
                 str(pdf_path),
                 '--types', types_str,
                 '--output', str(output_dir)

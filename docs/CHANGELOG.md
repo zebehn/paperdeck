@@ -21,13 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release of PaperDeck
 - PDF element extraction using Docling
 - AI-powered slide organization
-- Multi-provider AI support (OpenAI, Anthropic, Ollama, LM Studio)
+- AI provider support: OpenAI implemented; Anthropic, Ollama, LM Studio selectable but not implemented (raise NotImplementedError)
 - LaTeX Beamer presentation generation
 - Four built-in prompt templates (default, technical, accessible, pedagogical)
 - CLI interface with Click
 - Automatic LaTeX to PDF compilation
 - Configuration system with YAML support
-- Comprehensive test suite (141 tests passing)
+- Comprehensive test suite (141 tests passing at release, as recorded then; re-measured 2026-09-25 on Linux/Python 3.11 without docscalpel and pdflatex: 415 passed, 24 failed, 27 skipped)
 - Documentation (README, CONTRIBUTING, examples)
 
 ### Core Features

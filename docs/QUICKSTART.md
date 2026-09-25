@@ -39,7 +39,7 @@ pip install -e .
 export OPENAI_API_KEY="sk-..."
 ```
 
-**Option B: Ollama (Local, no API key needed)**
+**Option B: Ollama (Local, no API key needed)** — not implemented yet; `--provider ollama` currently raises `NotImplementedError`.
 
 ```bash
 # Install Ollama
@@ -115,7 +115,7 @@ paperdeck generate paper.pdf --no-compile
 # OpenAI with specific model
 paperdeck generate paper.pdf --provider openai --model gpt-4
 
-# Anthropic Claude
+# Anthropic Claude (not implemented yet; raises NotImplementedError)
 paperdeck generate paper.pdf --provider anthropic --api-key sk-ant-...
 
 # Ollama (local)

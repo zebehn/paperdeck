@@ -3,7 +3,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/badge/github-zebehn/paperdeck-blue?logo=github)](https://github.com/zebehn/paperdeck)
-[![Tests](https://img.shields.io/badge/tests-95%20passing-success)](https://github.com/zebehn/paperdeck)
+[![Tests](https://img.shields.io/badge/tests-415%20passed%20%7C%2024%20failed%20%7C%2027%20skipped-orange)](STATUS.md)
 
 **PaperDeck** is an intelligent LaTeX presentation generator that transforms research papers (PDFs) into polished Beamer presentations using AI.
 
@@ -13,11 +13,9 @@
 - 🤖 **AI-Powered Organization** - Intelligently organizes content into logical presentation slides
 - 🎨 **Multiple Themes** - Supports all standard Beamer themes (Madrid, Copenhagen, Berkeley, etc.)
 - 💬 **Flexible Prompts** - Customize presentation generation with built-in or custom prompt templates
-- 🔌 **Multi-Provider AI Support**:
-  - OpenAI (GPT-4, GPT-3.5)
-  - Anthropic (Claude)
-  - Ollama (Local models)
-  - LM Studio (Local models)
+- 🔌 **AI Provider**: OpenAI only (default model in code: `gpt-5.1`).
+  `anthropic`, `ollama` and `lmstudio` are accepted by `--provider` but are not
+  implemented yet and raise `NotImplementedError` (see `src/paperdeck/ai/orchestrator.py`).
 - 📝 **LaTeX Generation** - Produces clean, compilable Beamer LaTeX code
 - ✅ **Built-in Validation** - Automatic detection and fixing of LaTeX structural errors
 - 🔄 **Error Recovery** - Retry compilation with auto-fixes when errors occur
@@ -31,7 +29,7 @@
 
 - Python 3.11 or higher
 - LaTeX distribution (TeX Live, MiKTeX, or MacTeX) for PDF compilation
-- API key for cloud AI providers (OpenAI or Anthropic) or local model setup (Ollama/LM Studio)
+- OpenAI API key (the only implemented provider)
 
 #### Install from Source
 
@@ -70,8 +68,8 @@ paperdeck generate [OPTIONS] PDF_PATH
 - `-o, --output PATH` - Output directory (default: ./<pdf_filename>)
 - `-t, --theme TEXT` - Beamer theme (default: Madrid)
 - `-p, --prompt TEXT` - Prompt template (default: default)
-- `--provider TEXT` - AI provider: openai, anthropic, ollama, lmstudio (default: openai)
-- `--model TEXT` - Specific model to use (e.g., gpt-4, claude-3-opus)
+- `--provider TEXT` - AI provider (default: openai). Only `openai` is implemented; `anthropic`, `ollama`, `lmstudio` raise `NotImplementedError`
+- `--model TEXT` - Specific OpenAI model to use (e.g., gpt-5.1, gpt-4)
 - `--api-key TEXT` - API key for cloud providers
 - `--skip-extraction` - Skip figure/table extraction, use pre-extracted files
 - `--elements-input-dir PATH` - Directory with pre-extracted elements (default: <output>/extracted)
@@ -99,9 +97,6 @@ paperdeck generate my_paper.pdf -p hangeul
 
 # Use GPT-4 with verbose output
 paperdeck generate my_paper.pdf --model gpt-4 -v
-
-# Use local Ollama model
-paperdeck generate my_paper.pdf --provider ollama --model llama2
 
 # Generate LaTeX only, skip PDF compilation
 paperdeck generate my_paper.pdf --no-compile
@@ -165,9 +160,6 @@ Set API keys via environment variables:
 ```bash
 # OpenAI
 export OPENAI_API_KEY="sk-..."
-
-# Anthropic
-export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
 #### Configuration File
@@ -478,6 +470,9 @@ pip install -e .
 
 ```bash
 # Run all tests
+# Measured 2026-09-25 (Linux, Python 3.11, without docscalpel/pdflatex installed):
+# 415 passed, 24 failed, 27 skipped. Test fixtures also need `reportlab`,
+# which is not listed in requirements-dev.txt.
 pytest
 
 # Run with coverage

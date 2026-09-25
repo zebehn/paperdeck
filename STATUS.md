@@ -1,6 +1,7 @@
 ---
 project: paperdeck
 purpose: PDF 논문을 입력받아 대규모 언어 모델로 Beamer 발표자료 LaTeX 코드를 생성하는 명령줄 도구를 만든다.
+owner: [미확인]
 status: 대기
 stage: 명령줄 도구 0.1.0이 OpenAI 제공자 기준으로 동작하는 상태에서 2026-01-22 이후 개발이 멈춰 있고, 유지·확장 방향에 대한 사용자 결정을 기다린다 (기준일 2026-09-25). [현황 미확인, 2026-09-25 점검]
 updated: 2026-09-25
@@ -23,7 +24,7 @@ docs:
 
 # PaperDeck 현황
 
-> 기재 정책: zebehn/mastermind docs/STATUS_POLICY.md (v1.0). 최종 갱신 2026-09-25 (KST).
+> 기재 정책: zebehn/mastermind docs/STATUS_POLICY.md (v1.1). 주 담당 [미확인]. 최종 갱신 2026-09-25 (KST).
 
 ## 요약
 
